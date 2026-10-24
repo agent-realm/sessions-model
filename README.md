@@ -12,7 +12,8 @@ repository holds two contracts that turn those formats into one shape:
 - **[sessions](contracts/sessions.md)**: the four operations a session adapter exposes
   (`describe`, `list`, `read`, `derive`), how a read reports what changed, and who keeps what.
 - **[the annex](contracts/sessions-model-annex.md)**: what each harness actually stores, as
-  observed, with the fixtures that prove it.
+  observed on a lab machine. The conformance cases an adapter must pass are in sessions-model's
+  checklist, against the provider's fixtures.
 
 [TERMINOLOGY.md](TERMINOLOGY.md) is the vocabulary. Its *Sessions* section defines every term the
 contracts use.
