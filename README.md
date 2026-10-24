@@ -31,8 +31,9 @@ contracts use.
 **sessions-model v1.1, sessions v1.1 (consumer pending).** The shape and every closed list are
 frozen; additive optional fields, new registry values and opt-in features come in v1.x
 (sessions-model v1.1 added the `ts_source` value `legacy`; sessions v1.1 adds the `forget-notice`
-feature), and a breaking change needs v2. One provider passes the conformance checklist; the
-first consumer, memhouse, is moving onto it.
+feature), and a breaking change needs v2. One provider passes the v1 conformance checklist; the
+first consumer, memhouse, is moving onto it. The `forget-notice` feature has no provider or consumer
+yet.
 
 ## Who implements it
 
