@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  # The provider whose seal() and validateSession() the examples and the tutorial are checked
+  # against: harness-skeleton's packages/session-adapters, pinned. Move the pin by PR.
+  HARNESS_SKELETON_REF: 43407a992263d4c63e429861c7855691eecc36e5
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Self-test the guard
+        run: node scripts/guard.mjs --self-test
+      - name: Guard the tracked files and the commits
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            # The checkout is the merge commit: HEAD^1 is the base, HEAD^2 the pull request's head.
+            # The base's copy of the guard runs, so a change to the guard takes effect only after
+            # it is merged. Changes to this workflow itself still need review.
+            if git cat-file -e "HEAD^1:scripts/guard.mjs" 2>/dev/null; then
+              git show "HEAD^1:scripts/guard.mjs" > "$RUNNER_TEMP/guard.mjs"
+              guard="$RUNNER_TEMP/guard.mjs"
+            else
+              guard=scripts/guard.mjs
+            fi
+            node "$guard" --commits "HEAD^1..HEAD^2"
+          else
+            node scripts/guard.mjs --commits HEAD
+          fi
+
+  examples:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: agent-realm/harness-skeleton
+          ref: ${{ env.HARNESS_SKELETON_REF }}
+          path: .provider/harness-skeleton
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Regenerate and validate the examples
+        run: |
+          node examples/generate.mjs "$GITHUB_WORKSPACE/.provider/harness-skeleton/packages/session-adapters" examples
+          git status --porcelain -- examples
+          test -z "$(git status --porcelain -- examples)"
+      - name: Run the tutorial
+        run: node scripts/check-tutorial.mjs "$GITHUB_WORKSPACE/.provider/harness-skeleton"
