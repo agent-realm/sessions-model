@@ -257,6 +257,12 @@ The engine also:
   position of an unknown kind verbatim.
 
   sessions-model's are listed in its §8.
+- **Features (v1.x).** A v1.x adds behaviour as a named **feature**: optional inputs, and outputs
+  that an adapter returns only when the consumer names the feature in an operation's `features`
+  input (a list of feature names). Without `features`, an adapter behaves exactly as v1. A consumer
+  that names a feature to an adapter that refuses the input treats that adapter as v1. A feature's
+  facet values are a closed list from the version that adds it. No closed list of v1 gains a value
+  in a v1.x.
 - **Redaction is the adapter's.** Units and records arrive already redacted (sessions-model §4).
   The engine never re-reads the harness store to recover a value.
 
