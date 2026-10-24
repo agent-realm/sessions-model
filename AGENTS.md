@@ -7,7 +7,8 @@ repository.
 
 Two contracts and their vocabulary: `contracts/sessions-model.md`, `contracts/sessions.md`,
 `contracts/sessions-model-annex.md` and `TERMINOLOGY.md`, plus guides in `docs/` and example
-records in `examples/`. There is no code to build; `examples/generate.mjs` is the one script.
+records in `examples/`. There is no code to build. `examples/generate.mjs` regenerates the
+examples, and `scripts/` holds the two checks CI runs.
 
 ## Docs and examples
 
@@ -17,6 +18,17 @@ records in `examples/`. There is no code to build; `examples/generate.mjs` is th
   `ALL VALID`. The script uses the provider's own `seal()` and `validateSession()`.
 - Examples are synthetic. Use the contract's known-answer `host`, and never data from a real
   machine.
+
+## Checks (CI runs both on every pull request)
+
+- **The guard:** `node scripts/guard.mjs --commits origin/main..HEAD` must print `guard: clean`.
+  It flags private detail in tracked files and in the change's commit messages and authors, and a
+  contract whose H1 carries no version. It prints file and line, never the matched text. A false
+  positive goes into its `ALLOW` list; never reword correct text to pass it.
+- **The examples and the tutorial:** against harness-skeleton's `packages/session-adapters` at the
+  ref pinned in `.github/workflows/ci.yml`, `node examples/generate.mjs <package> examples` must
+  report `ALL VALID` and change no file, and `node scripts/check-tutorial.mjs <harness-skeleton>`
+  must match `examples/01-one-message`.
 
 ## The rules
 

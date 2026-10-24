@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  # The provider whose seal() and validateSession() the examples and the tutorial are checked
+  # against: harness-skeleton's packages/session-adapters, pinned. Move the pin by PR.
+  HARNESS_SKELETON_REF: 43407a992263d4c63e429861c7855691eecc36e5
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Guard the tracked files and the change's commits
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if [ -n "$BASE" ] && [ "$BASE" != "0000000000000000000000000000000000000000" ]; then
+            node scripts/guard.mjs --commits "$BASE..$HEAD"
+          else
+            node scripts/guard.mjs
+          fi
+
+  examples:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: agent-realm/harness-skeleton
+          ref: ${{ env.HARNESS_SKELETON_REF }}
+          path: .provider/harness-skeleton
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Regenerate and validate the examples
+        run: |
+          node examples/generate.mjs .provider/harness-skeleton/packages/session-adapters examples
+          git diff --exit-code -- examples
+      - name: Run the tutorial
+        run: node scripts/check-tutorial.mjs .provider/harness-skeleton
