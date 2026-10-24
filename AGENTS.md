@@ -37,6 +37,8 @@ examples; `scripts/guard.mjs` and `scripts/check-tutorial.mjs` are checks; CI ru
     Never reword correct text to pass the guard.
   - The maintainer also runs it with `--names <file>`, a local list of names that never enters the
     repository in any form.
+  - `node scripts/guard.mjs --self-test` runs the guard's own cases. Add a case with every fix to a
+    check.
 - **The examples and the tutorial:** use harness-skeleton's `packages/session-adapters` at the ref
   pinned in `.github/workflows/ci.yml`, and give the package as an absolute path.
   - `node examples/generate.mjs <package> examples` must report `ALL VALID` and change or add no

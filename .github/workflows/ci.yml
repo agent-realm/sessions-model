@@ -25,6 +25,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Self-test the guard
+        run: node scripts/guard.mjs --self-test
       - name: Guard the tracked files and the commits
         run: |
           if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then

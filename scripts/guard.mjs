@@ -9,6 +9,7 @@
 //                                                line they add; addresses only against --names
 //                                                (<range> is A..B, or one ref for its whole history)
 //   node scripts/guard.mjs --names <file>        also look for the names in a local file
+//   node scripts/guard.mjs --self-test           run the guard's own cases (SELF_TEST below)
 //
 // The --names file holds one name per line (a word, or a phrase of up to three words; any
 // punctuation between words is equivalent), or a line `re:<regex>`; `#` starts a comment, at the
@@ -28,8 +29,14 @@ const CHECKS = {
     /\bbearer\s+[A-Za-z0-9._~+\/-]{16}/i.test(l) ||
     [...l.matchAll(/(password|passwd|token|api[_-]?key|secret)["']?\s*[=:]\s*["']?([A-Za-z0-9\/+_.-]{12,})/gi)]
       .some((m) => /\d/.test(m[2]) && /[A-Za-z]/.test(m[2])),
-  'home path with a user name': (l) =>
-    /(?<!:\/\/[^\s\/]+\S*)\/(Users|users|home)\/(?!user\b|me\b|you\b|runner\b)[A-Za-z0-9_]/.test(l) || /[A-Za-z]:\\+Users\\+(?!user\b|public\b)[A-Za-z0-9_]/i.test(l),
+  'home path with a user name': (l) => {
+    // A path inside a URL with a host is not a home path. Only the URL token itself is set aside,
+    // so a home path elsewhere on the line (the next JSON value, say) is still checked. A URL with
+    // an empty host (unix:///…, sqlite:////…) and any scheme ending in "file" stay checked.
+    const rest = l.replace(/\b(?![A-Za-z0-9+.-]*file:)[A-Za-z][A-Za-z0-9+.-]+:\/\/[^\s\/"'<>()\[\]{},|`^][^\s"'<>()\[\]{},|`^]*/gi, ' ');
+    return /\/(Users|users|home)\/(?!user\b|me\b|you\b|runner\b)[A-Za-z0-9_]/.test(rest) ||
+      /[A-Za-z]:\\+Users\\+(?!user\b|public\b)[A-Za-z0-9_]/i.test(rest);
+  },
   'private IP address': (l) =>
     /\b(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}|169\.254\.\d{1,3}\.\d{1,3})\b/.test(l) ||
     /\b(f[cd][0-9a-f]{2}|fe80):[0-9a-f:]*:[0-9a-f]{1,4}\b/i.test(l),
@@ -46,7 +53,35 @@ const ALLOW = {
   'process wording': [/^\s*\/\\bpilot\\b\|\\\x5bvia /],   // the pattern above, in this file
 };
 
+// Cases for --self-test: [line, check, expected]. Paths are split so this file stays clean.
+const H = '/ho' + 'me/', U = '/Us' + 'ers/';
+const SELF_TEST = [
+  ['{"url":"https://example.com","cwd":"' + H + 'alice/project"}', 'home path with a user name', true],
+  ['{"url":"https://example.com' + H + 'alice/project"}', 'home path with a user name', false],
+  ['see https://api.github.com/users/octocat', 'home path with a user name', false],
+  ['/mnt/c' + U + 'bob/x', 'home path with a user name', true],
+  ['file://' + U + 'bob/x', 'home path with a user name', true],
+  [H + 'user/project', 'home path with a user name', false],
+  ['DOCKER_HOST=unix://' + U + 'bob/.orbstack/run/docker.sock', 'home path with a user name', true],
+  ['git+file://' + H + 'bob/repo', 'home path with a user name', true],
+  ['FILE://' + U + 'bob/x', 'home path with a user name', true],
+  ['C:/' + U + 'bob/x', 'home path with a user name', true],
+  ['|https://example.com|' + H + 'alice|', 'home path with a user name', true],
+  ['`https://example.com`' + H + 'alice', 'home path with a user name', true],
+  ['ssh://host' + H + 'alice', 'home path with a user name', false],
+  ['sessions-model@v1.1', 'e-mail address', false],
+];
+
 const args = process.argv.slice(2);
+if (args.includes('--self-test')) {
+  if (args.length > 1) { console.error('guard: --self-test takes no other arguments'); process.exit(2); }
+  let failed = 0;
+  SELF_TEST.forEach(([line, check, want], i) => {
+    if (CHECKS[check](line) !== want) { failed++; console.log(`self-test: case ${i + 1} (${check}) expected ${want ? 'a hit' : 'no hit'}`); }
+  });
+  console.log(failed ? `guard self-test: ${failed} failed` : `guard self-test: ${SELF_TEST.length} passed`);
+  process.exit(failed ? 1 : 0);
+}
 const opts = {};
 for (let i = 0; i < args.length; i++) {
   if (args[i] !== '--commits' && args[i] !== '--names') { console.error(`guard: unknown argument ${args[i]}`); process.exit(2); }
