@@ -203,7 +203,11 @@ a moved hint then reads again and gets the notice. That covers the main case, a 
 already gone from the current generation, which no v1 read could show.
 
 **`list`** takes `forgets_from` (`"start"` or the last `forgets_position`) and returns `forgets`,
-every notice whose scope is `session` written after it, and `forgets_position`. A session forgotten
+**every** notice written after it, whatever its scope and whether or not its session can still be
+read, and `forgets_position`. `list` is the complete feed: a notice for keys of a session that was
+deleted afterwards, or of an incarnation that can no longer be read, still reaches the consumer
+here. `read`'s `forgets` delivers a session's key-scope notices in the same call as the change they
+explain; a consumer may see a notice in both, and applies it once (§4). A session forgotten
 whole is absent from `list`'s sessions only in a `list` that also returns its notice, or after one
 did. To meet that, the harness writes the notice before it deletes the session, and `list`
 enumerates the sessions first, then reads the notices, holding back a partial last line of a
@@ -294,8 +298,12 @@ The engine also:
 **Forget notices** (feature `forget-notice`, v1.1). A consumer that opts in **honours** notices when
 it:
 1. applies a call's `forgets` before that call's units, `live` and continuity;
-2. writes no removed version for a forgotten key. A record written again under a forgotten key, from
-   units received after the notice was applied, is new content and is kept as usual;
+2. writes no removed version for a forgotten key. A record under a forgotten key is **new content**
+   only when none of the units it is built from (`built_from`) is a unit that a forgotten record
+   was built from, compared by the units' sha256, which the consumer already holds as `known`.
+   Receipt order never decides it: after a crash between the notice and the deletion, or on a full
+   re-read, the old units come back unchanged, and the forgotten key stays forgotten. Without
+   `built_from`, a forgotten key never comes back;
 3. stops serving the keys at once: in every read, search and total, in copies of the same content it
    holds under other keys, and through every reader it delegates to, removed-row readers included;
 4. deletes under its own policy, which says how far deletion reaches and when. On its admin's
@@ -387,6 +395,8 @@ versions of what the harness forgot.
 - [ ] A forget of a whole session arrives in `list`'s `forgets` in the first `list` where the
       session is absent; after a crash between notice and deletion, the session is never absent
       without its notice.
+- [ ] A forget of keys followed by an ordinary deletion of the session, before any consumer reads
+      again, still reaches the consumer through `list`'s `forgets`.
 - [ ] A source deletion produces no notice.
 - [ ] No notice carries planted sentinel text, a content hash or a person.
 - [ ] Every forgotten key is listed; only a message's parts follow their message.
@@ -436,7 +446,9 @@ versions of what the harness forgot.
       the notice, because it passed `forgets_from`.
 - [ ] An upgrade refold and a replay from the archive bring no forgotten key back, and leave rows
       with no raw source as they are.
-- [ ] A record written again under a forgotten key, from later units, is kept as new content.
+- [ ] A record under a forgotten key built from new units (different sha256) is kept as new
+      content; after a crash between the notice and the deletion, or on a full re-read, the old
+      units do not bring the forgotten key back.
 - [ ] After its admin's confirm, its archive holds no unit a forgotten record was built from.
 - [ ] A source deletion still produces removed versions.
 
