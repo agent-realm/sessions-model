@@ -1,6 +1,6 @@
-# Contract: sessions v1
+# Contract: sessions v1.1
 
-**version:** v1
+**version:** v1.1
 **between:** session adapters, one per harness, in the session-adapters module of
 [harness-skeleton](https://github.com/agent-realm/harness-skeleton) (provider) ↔ memhouse's capture engine,
 the `sessions.*` shim in harness-skeleton's `hs` tool, and sessions-sql loaders (consumers)
@@ -84,7 +84,7 @@ the harness store. It must tolerate a live writer:
 
 | Operation | Takes | Returns |
 |---|---|---|
-| `describe` | nothing | see below |
+| `describe` | nothing (v1.1: optional `features`) | see below |
 | `list` | `store` | per session: `session_id`, `incarnation`, `updated_hint`, `live` (`true` \| `false` \| `unknown`), `sources` (§1) |
 | `read` | `store`, `session`, `source_key`, `from` (position or none), `known` (the engine's `{unit_key: sha256}` for this source, or none) | `continuity`, `units` (bodies), `gone` (unit_keys), `position`, `held_back`; or a typed error |
 | `derive` | `session`, `input` (per source: `generation`, and either all units of that generation or the new and changed units plus `gone`), `state` (opaque, or empty) | `changed` (the records whose final state changed), `live` (the **complete** set of live keys, per record type), `held` (keys withheld as incomplete, per record type; below), a new `state` carrying `state_ver`, and a `checkpoint` flag (state is safe to persist) |
@@ -164,6 +164,63 @@ output on any host.
 - **When any source of a session resets**, the engine re-derives the whole session from empty
   state over all sources' current units. State never survives a reset of any source.
 
+### Feature `forget-notice` (v1.1)
+
+A harness admin can deliberately delete some of a session's records, or a whole session: an **admin
+forget**. The `forget-notice` feature carries that decision to consumers, so they can forget the same
+keys instead of keeping them as removed versions. A source deletion (a message deleted in the
+harness, a destructive rewind, a deleted session) is not a forget: it produces removed versions,
+never a forget notice. Every input and output below exists only for a consumer that names
+`forget-notice` in `features` (§5).
+
+**The forget notice** is kept in the harness store for its life, and written, durably (an fsync for
+a file), before anything is deleted:
+
+```json
+{"forget_id": "<opaque, unique in the harness store>",
+ "session_id": "<id>", "incarnation": "<incarnation>",
+ "scope": "session" | {"keys": [{"type": "message", "message_id": "m-0042"}, …]},
+ "at": "<RFC 3339 time>"}
+```
+
+- **Content-free:** no text, no content hash, no reason and no person.
+- **Every forgotten key is listed; nothing cascades.** A message's parts go with their message,
+  because a part's key is the message key plus `part_id`. A usage, lifecycle or link record is
+  forgotten only when it is listed.
+- **Keys are record keys** (sessions-model §1), each with its record `type`, never unit positions.
+
+**`describe`** returns the facet `forget_notices`: `none` (the harness has no admin forget) or
+`delivered` (the adapter delivers notices as below).
+
+**`read`** takes `forgets_from`, the literal `"start"` or a `forgets_position` from the consumer's
+last read of the session. It returns:
+- `forgets`: every notice of the session whose scope is keys, written after `forgets_from`,
+  whatever the `continuity`, `unchanged` included;
+- `forgets_position`, which the consumer stores with its cursor and passes next time.
+
+After any forget of keys, the session's `updated_hint` in `list` moves. A consumer that reads only on
+a moved hint then reads again and gets the notice. That covers the main case, a forget of keys
+already gone from the current generation, which no v1 read could show.
+
+**`list`** takes `forgets_from` (`"start"` or the last `forgets_position`) and returns `forgets`,
+every notice whose scope is `session` written after it, and `forgets_position`. A session forgotten
+whole is absent from `list`'s sessions only in a `list` that also returns its notice, or after one
+did. To meet that, the harness writes the notice before it deletes the session, and `list`
+enumerates the sessions first, then reads the notices, holding back a partial last line of a
+file-based notice store. A consumer reading a retired tail may get an `appended` tail just before
+the forget's reset; the notice in the next read covers it.
+
+**`derive`** returns `built_from`: for each record in `changed`, the units it was built from, as
+`{record key: [{source_key, unit_key}, …]}`. It is required with `forget_notices: delivered`. A
+consumer that archives raw units uses it to find what a notice reaches. Without it, such a consumer
+cannot map keys to units: it keeps the archived bytes and filters the forgotten keys out for good
+(§4).
+
+**Security.** A notice is honoured on the harness store's word: the protocol does not authenticate
+it, so anything that can write the harness store can write one. Consumers are recommended to hide
+the keys at once and delete them only on their admin's confirmation, so a forged or buggy notice
+costs nothing that cannot be undone.
+
 **Facets** (in `describe`). harness-skeleton grades the same facets for mechanism, fidelity and
 readiness.
 
@@ -234,6 +291,27 @@ The engine also:
 - **verifies a fingerprint-nominated fork** on full records before it assigns `inherits` or
   bills anything.
 
+**Forget notices** (feature `forget-notice`, v1.1). A consumer that opts in **honours** notices when
+it:
+1. applies a call's `forgets` before that call's units, `live` and continuity;
+2. writes no removed version for a forgotten key. A record written again under a forgotten key, from
+   units received after the notice was applied, is new content and is kept as usual;
+3. stops serving the keys at once: in every read, search and total, in copies of the same content it
+   holds under other keys, and through every reader it delegates to, removed-row readers included;
+4. deletes under its own policy, which says how far deletion reaches and when. On its admin's
+   confirm it drops each archived unit a forgotten record was built from (`built_from`). A unit that
+   also built a kept record is dropped too, and the kept record's row stays, marked as having no raw
+   source;
+5. applies a notice once, by `forget_id`;
+6. treats a whole-session notice as a forget, never as a source deletion;
+7. applies the notices it holds in every re-derivation (an upgrade refold, a replay of an older
+   generation, a replay from its archive), so a forgotten key does not come back. A row marked as
+   having no raw source is left as it is.
+
+A consumer that applies one read in capped steps holds the notices with the removals it holds back,
+and applies both at the last step. A consumer that does not opt in keeps v1's behaviour: removed
+versions of what the harness forgot.
+
 ## 5. The contract
 
 - **Code does not cross the seam.** Only the operations, units, records, positions and facets do.
@@ -299,6 +377,23 @@ The engine also:
 - [ ] `list` omits a deleted session, even where a native index keeps orphans (Copilot
       `session-store.db`).
 
+**Feature `forget-notice`** (v1.1), for an adapter that states `forget_notices: delivered`:
+
+- [ ] Without `features`, every output is exactly v1: no facet, no `forgets`, no `built_from`.
+- [ ] A forget of keys still in the current generation arrives in `forgets` in the read that shows
+      its `reset`, `delta` or `snapshot`.
+- [ ] A forget of keys already deleted in the source moves the session's `updated_hint`, and the
+      next read returns the notice in `forgets`, though the read itself is `unchanged`.
+- [ ] A forget of a whole session arrives in `list`'s `forgets` in the first `list` where the
+      session is absent; after a crash between notice and deletion, the session is never absent
+      without its notice.
+- [ ] A source deletion produces no notice.
+- [ ] No notice carries planted sentinel text, a content hash or a person.
+- [ ] Every forgotten key is listed; only a message's parts follow their message.
+- [ ] `forgets_from: "start"` returns every notice the harness store ever wrote, across restarts and
+      the harness's own retention.
+- [ ] `built_from` names, for every changed record, exactly the units it was built from.
+
 **Engine side** (memhouse):
 
 - [ ] **Held:** a key that the consumer wrote earlier and that a later derive returns in `held`
@@ -330,6 +425,20 @@ The engine also:
       and the current-state reads equal those of a tombstoning consumer.
 - [ ] An `adapter_ver` or `state_ver` bump re-derives from the archive alone and tombstones keys
       the new version no longer produces.
+
+**Feature `forget-notice`** (v1.1), for a consumer that claims to honour notices:
+
+- [ ] After a forget of keys, no removed version of those keys exists, and they are served nowhere,
+      copies under other keys and delegated readers included.
+- [ ] After a whole-session forget, nothing of the session is served, and no removed version exists.
+- [ ] A notice delivered twice is applied once.
+- [ ] Stopped after a read and restarted, re-reading with `known` from its archive, it still applies
+      the notice, because it passed `forgets_from`.
+- [ ] An upgrade refold and a replay from the archive bring no forgotten key back, and leave rows
+      with no raw source as they are.
+- [ ] A record written again under a forgotten key, from later units, is kept as new content.
+- [ ] After its admin's confirm, its archive holds no unit a forgotten record was built from.
+- [ ] A source deletion still produces removed versions.
 
 ## Verification status
 
