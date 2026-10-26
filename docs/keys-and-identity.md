@@ -12,7 +12,10 @@ adds one key of its own. Getting these right is what lets two readers on two mac
   taken exactly as the OS stores it (trimmed, no case change). It is never the hostname: one Mac
   answers as `my-laptop`, `my-laptop.local` or a fully qualified name, and a rename changes it.
   Where no machine id can be read, `host` is `r-` plus a random 128-bit id persisted at one fixed
-  per-user path.
+  per-user path. A harness store kept by a service rather than on a machine (claude.ai's
+  conversations, read from an export) has `host` = `s-` plus the first 32 hex digits of sha256 over
+  `sessions-model/service-host/v0:` and the lowercase domain, and the service's origin
+  (`https://claude.ai`) as `harness_path`, so every importer lands on one key (v1.2).
 - **`harness`** is one value from a registry (`claude-code`, `codex`, `gemini-cli`, `opencode`,
   `zed`, …). The registry grows in v1.x with the harnesses the model covers, and a v1 reader
   accepts a value it does not know (sessions-model §8).

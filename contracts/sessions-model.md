@@ -1,6 +1,6 @@
-# Contract: sessions-model v1.1
+# Contract: sessions-model v1.2
 
-**version:** v1.1
+**version:** v1.2
 **between:** session adapters (providers) ↔ any consumer of what a harness keeps: memhouse's
 capture engine, harness-skeleton's `sessions read`, a dashboard, an importer
 **status:** the harness-neutral shape of a harness store's conversation data: one model, one adapter
@@ -54,7 +54,7 @@ Every key starts with the folder the session lives in, on the host it lives on:
 | **link** | stating session + `(kind, other side's reference, at)` (§2.5) |
 | **lifecycle** | session + `lifecycle_id` (§2.6) |
 
-**`host`** names the machine. Every reader on one machine derives the same value, so two readers
+**`host`** names the machine, or, for a service-held harness store, the service (below). Every reader on one machine derives the same value, so two readers
 (a consumer, a harness-skeleton driver, a sessions-sql loader) never key one session twice:
 - `host` is the first 32 hex digits, lowercase, of sha256(`"sessions-model/host/v0:"` + the OS
   machine id), the whole input encoded as UTF-8. The machine id is the value's characters exactly
@@ -111,6 +111,12 @@ Every key starts with the folder the session lives in, on the host it lives on:
   containers with the same paths inside (`/root/.claude`) would share one key for two harness
   stores, so a container does not borrow its machine's id: it has its own machine id, or no
   readable id and so the `r-` value.
+- **A service-held harness store** (v1.2) keeps its sessions on a service, not on a machine:
+  claude.ai's conversations, read from an account's export. `host` = `s-` + the first 32
+  lowercase hex digits of sha256 over the UTF-8 bytes of `sessions-model/service-host/v0:`
+  followed by the service's domain in lowercase (`claude.ai`). Every importer derives the same
+  value, so one conversation imported on two machines has one key. The `s-` prefix marks the
+  value as a service's, never a machine's. `host_label` is the domain.
 - The salt is versioned. Changing it re-keys every session, so it changes only with a new version
   of this contract.
 
@@ -123,6 +129,9 @@ binds a harness to it):
   otherwise normalises the path itself;
 - **without** a trailing slash, compared as bytes;
 - **never** a working directory.
+
+A **service-held harness store** (above) has no data folder: its `harness_path` is the service's
+origin, `https://` followed by the domain (`https://claude.ai`) (v1.2).
 
 **A harness bound to one database file** rather than a folder has that file's real path as
 `harness_path`, under the same rules. A harness store is a **folder harness store** when its
@@ -176,8 +185,12 @@ Rules:
    session is `client`. `harness` takes one value from this registry (§8): `claude-code`, `codex`,
    `copilot-cli`, `vscode`, `cursor`, `cursor-agent`, `agy`, `antigravity`, `opencode`, `goose`,
    `gemini-cli`, `commandcode`, `droid`, `devin`, `zed`, `kiro`, `jetbrains-copilot`, `pi`,
-   `reference-harness`. `reference-harness` is the conformance reference harness that harness-skeleton plans: a program of its own whose native store is these records. A
+   `reference-harness`, `claude-ai`. `reference-harness` is the conformance reference harness that harness-skeleton plans: a program of its own whose native store is these records. `claude-ai` is claude.ai's conversations, a service-held harness store (v1.2). A
    new harness adds its value in a v1.x. Two engines of one harness are told apart by `engine`.
+   `client` takes its value from the same registry (v1.2): the harness's own id when the harness
+   wrote the session, another program's id when that program wrote into this harness store
+   (VS Code into Copilot's, below), and null when the harness store does not say who wrote it. A
+   writer the registry lacks is added in a v1.x; until then its sessions carry null.
    - **Copilot's `~/.copilot/session-state`** belongs to `copilot-cli`, including the sessions
      VS Code writes there (`client_name: vscode-agent-host` → `client: vscode`).
      - VS Code's `vsSid` is an alias of such a session.
@@ -304,7 +317,7 @@ plus its own key fields (§1), and two hashes:
 | `state` | enum | `active` \| `archived` \| `deleted` |
 | `pinned` | bool \| null | droid `.favorites`, agy annotations |
 | `mode` | string | native mode (plan, agent, ask, autopilot …) |
-| `kind` | string | native session type: Goose `user`, `sub_agent`, `hidden`, `terminal`, `scheduled`, `acp`; Devin hidden summary-agent sessions |
+| `kind` | string | native session type: Goose `user`, `sub_agent`, `hidden`, `terminal`, `scheduled`, `acp`; Devin hidden summary-agent sessions. An adapter never mints a `kind` the harness store does not write: cursor-agent stores none, so its sub-agent sessions have `kind` null and are told by their `subagent` link (§2.5) |
 | `reuse` | enum | §1 rule 2 |
 | `ts_source` | enum | what the harness store's `ts` means: `event`, `write` (CommandCode entries, droid), `reset_on_save` (Devin rows: the message's own `metadata.created_at` is used instead), `seconds` (Goose), `none` (Zed), `legacy` (v1.1: the time a pre-adapter consumer stored, not recoverable from the source; only a consumer importing rows it stored before it read through an adapter writes it, and an adapter never emits it). `first_seen` is the fallback |
 | `aliases` | list | §1 rule 9 |
@@ -326,7 +339,7 @@ plus its own key fields (§1), and two hashes:
 | `state` | enum | `current` \| `reverted` (hidden by a revert the harness store can undo: OpenCode `session.revert`) \| `retracted` (an append-only retraction removed it while the record stays in the source: Gemini `$rewindTo`, `$patch.removeIds`, VS Code `kind 2`; §2.6 (a)). A destructive delete is not a state: the key is tombstoned (§2.6 (b)) |
 | `on_active_branch` | bool \| null | tree-shaped harness stores that keep abandoned branches: CommandCode, Devin, droid under concurrent writers |
 | `ts` | ts | §1 rule 7 |
-| `requested_model`, `served_model` | string | as stored; they differ in Copilot, Goose, VS Code, agy and cursor-agent. Placeholders (agy `MODEL_PLACEHOLDER_M418`) are kept verbatim |
+| `requested_model`, `served_model` | string | as stored; they differ in Copilot, Goose, VS Code, agy and cursor-agent. Placeholders (agy `MODEL_PLACEHOLDER_M418`) are kept verbatim. Where a harness store keeps only the model selected for a thread (Zed), it is `requested_model`, and `served_model` is null |
 | `effort` | string | a field in Copilot, CommandCode, droid, OpenCode (`variant`) and Cursor IDE. Folded into the model id in agy and cursor-agent (left unparsed). A session field in Goose and Zed |
 | `response_id` | string | the billing unit: Claude `message.id`, Codex turn id, OpenCode assistant message |
 | `aliases` | list | §1 rule 9 |
@@ -364,7 +377,7 @@ Neither enters `cmp_sha`, as the message's own do not.
 | `text` | `text` | |
 | `reasoning` | `text` \| `opaque: true`, `signature_len` | `opaque` covers an empty value with an id (VS Code), encrypted content (VS Code Copilot engine) and signature-only records (agy, droid) |
 | `tool_call` | `call_id`, `name`, `args` (JSON), `server` (MCP) | |
-| `tool_result` | `call_id`, `is_error` (true \| false \| null), `status` (`completed` \| `cancelled` \| `denied`), `output` \| `output_ref`, `output_len`, `truncated`, `exit_code` (integer \| null) | `output_ref` is `{ref, sha256, bytes}` for output kept elsewhere: `ref` names it (a spilled side file of OpenCode `tool-output/`, Gemini `tool-outputs/` or agy `steps/<n>/output.txt`; a cursor-agent `blob:<id>`), and `sha256` and `bytes` describe its content, so a consumer can check a copy without reading the harness store. Both are null when the content is no longer stored (OpenCode cleans its spills up). `exit_code` is a shell tool's, where the harness store keeps it apart from the output (Zed keeps it only inside the text). `is_error` is null where the harness store has no flag (CommandCode), and where its flag is unreliable (Zed stores `false` for a failing command) |
+| `tool_result` | `call_id`, `is_error` (true \| false \| null), `status` (`completed` \| `cancelled` \| `denied`), `output` \| `output_ref`, `output_len`, `truncated`, `exit_code` (integer \| null) | `output_ref` is `{ref, sha256, bytes}` for output kept elsewhere: `ref` names it (a spilled side file of OpenCode `tool-output/`, Gemini `tool-outputs/` or agy `steps/<n>/output.txt`; a cursor-agent `blob:<id>`), and `sha256` and `bytes` describe its content, so a consumer can check a copy without reading the harness store. Both are null when the content is no longer stored (OpenCode cleans its spills up). `exit_code` is a shell tool's, where the harness store keeps it apart from the output (Zed keeps it only inside the text). `is_error` is the harness store's own flag. It is null where the harness store has no flag (CommandCode), and where its flag is unreliable: Zed stores `false` for a failing command, and Copilot CLI stores `success: true` for a shell that exited non-zero (that result's `is_error` is null; Copilot CLI's other results keep the flag). An adapter never derives `is_error` from `exit_code` or from the output's text: a consumer that wants to know whether a command failed reads `exit_code` |
 | `attachment` | `media_type`, `inline` (base64), `ref` (path), `bytes_len` | one of `inline` and `ref` is null. Images inline (Copilot, CommandCode, droid); PDFs by path (droid) |
 | `summary` | `text`, `replaces` | a compaction summary. **Never a delete**: the replaced messages stay current |
 | `error` | `error_kind`, `message`, `http_status` | provider and harness errors stored in the transcript. The field is `error_kind`, because `kind` is the part's own |
@@ -427,7 +440,10 @@ Per harness:
 **No overlap.** A session's usage records never count the same tokens twice, so a consumer can sum
 them, apart from `per_record` usage, which a reader collapses first (below). Where a harness store keeps a total beside values that are not its parts, the adapter emits
 the total only, and the other values stay in raw units: Zed's `request_token_usage` values do not
-sum to its `cumulative_token_usage` (annex), so Zed has one `per_session` record.
+sum to its `cumulative_token_usage` (annex), so Zed has one `per_session` record. Where a Zed
+thread's `cumulative_token_usage` is empty or absent, there is no total to overlap: the adapter
+emits each `request_token_usage` entry as its own record, `per_turn`, anchored `{message_id}` to
+the user message the entry is keyed by (v1.2).
 
 **The one exception: `per_record`.** Usage stored as given, where a harness repeated one response's
 usage on every record of that response (Claude Code's records, one per content block, as an earlier consumer stored them),
@@ -736,7 +752,8 @@ values is one of two kinds.
 
   Removing or renaming a registry value still needs v2.
 
-  Added since v1: `ts_source` `legacy` (v1.1, §2.1).
+  Added since v1: `ts_source` `legacy` (v1.1, §2.1); `client` values, which are the `harness`
+  registry's, and the `harness` `claude-ai` (v1.2, §1 rule 3).
 
 sessions has its own (sessions §5).
 
@@ -749,6 +766,19 @@ sessions has its own (sessions §5).
   finish** is the spawning call's `tool_result` (same `call_id`), so it needs no record.
 - **`continuation`** sharpened, with `at` a message id (§2.5).
 - **Gemini's tool-use prompt tokens:** the `tool_prompt` counter (§2.4).
+
+**Clarified in v1.2.** An adapter that derived otherwise bumps its `adapter_ver`, so the engine
+re-derives (sessions §4):
+- `client` takes its values from the `harness` registry, and is null when the harness store does
+  not say who wrote the session (§1 rule 3);
+- an adapter never mints a session `kind` (§2.1);
+- a thread's selected model, where it is the only model stored, is `requested_model` (§2.2);
+- `is_error` is the harness store's flag, null where it is missing or unreliable, never derived
+  from `exit_code` or text (§2.3);
+- a Zed thread with no `cumulative_token_usage` has `per_turn` usage records (§2.4);
+- a service-held harness store has an `s-` `host` derived from the service's domain, and the
+  service's origin as `harness_path` (§1). A reader that checks `host`'s form (sessions-sql's
+  `CHECK`) accepts `s-` from v1.2.
 
 **Deferred out of v1:**
 - joining launch records from harness-skeleton's `hs` tool onto other harnesses' sessions, which is consumer-side work;
@@ -877,6 +907,16 @@ Two wrong answers that a reader must not produce, because each shows a known mis
   the machine id takes no case change.
 - `306d491e299c0cafad3f50eda755590e` for the Linux row. That is the hash with the trailing newline
   kept, and surrounding whitespace is stripped.
+
+**Service-held `host`** (v1.2): sha256 over `sessions-model/service-host/v0:` followed by the
+domain, computed on 2026-10-27 by the same three tools, which agree.
+
+| Service domain | Expected `host` |
+|---|---|
+| `claude.ai` | `s-b8fdcc6d6c24b3fd5ad7e508e6143416` |
+
+A wrong answer: `s-28231db14f5bcffd44e6e610b777663d` is the hash of `Claude.ai`; the domain is
+lowercased first.
 
 **`harness_path`:** each case starts from a fixture tree the test builds. `<f>` stands for the
 fixture's own real path, already resolved.
