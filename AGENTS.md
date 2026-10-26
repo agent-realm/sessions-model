@@ -39,6 +39,10 @@ examples; `scripts/guard.mjs` and `scripts/check-tutorial.mjs` are checks; CI ru
     repository in any form.
   - `node scripts/guard.mjs --self-test` runs the guard's own cases. Add a case with every fix to a
     check.
+  - A push to `main` scans only the commits it brings. **Whenever the guard's rules tighten**, run
+    it over the whole history once: `node scripts/guard.mjs --commits HEAD` locally, or the CI
+    workflow by hand (Actions, CI, Run workflow). A hit in old history is reported to the
+    maintainer; history is never rewritten to clear it.
 - **The examples and the tutorial:** use harness-skeleton's `packages/session-adapters` at the ref
   pinned in `.github/workflows/ci.yml`, and give the package as an absolute path.
   - `node examples/generate.mjs <package> examples` must report `ALL VALID` and change or add no

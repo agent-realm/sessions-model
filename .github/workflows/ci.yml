@@ -5,6 +5,9 @@ on:
     branches: [main]
   push:
     branches: [main]
+  # By hand (Actions, CI, Run workflow): the guard over the whole history. Run it whenever the
+  # guard's rules tighten (AGENTS.md, Checks).
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -42,6 +45,8 @@ jobs:
               guard=scripts/guard.mjs
             fi
             node "$guard" --commits "HEAD^1..HEAD^2"
+          elif [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            node scripts/guard.mjs --commits HEAD
           else
             # A push scans the commits it brings. Earlier history was scanned when it came in, so a
             # stricter guard does not fail main on lines it already carries. A new branch, or a
