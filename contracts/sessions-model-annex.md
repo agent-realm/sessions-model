@@ -253,3 +253,90 @@ the session-adapters package's fixtures in
 
     Each harness must declare its `ts` source, with first-seen as the fallback, and order must not rely on ts alone.
 15. **Fixture redaction was name-based and inconsistent** in the first captures (five different markers; usage counters, signatures and map keys hidden). **Resolved 2026-10-22:** the cursor, vscode, gemini-cli and agy captures were re-extracted under the normative field-path rule (one marker `<redacted len=N>`, lint exemptions kept verbatim, counters intact). Only re-extracted captures can be used for redaction and usage checks; the older captures remain evidence of shapes, record types and field names.
+
+---
+
+## Not established by a live run
+
+The session-adapters package (1.0) proves every adapter against fixtures. Most fixtures follow a
+lab capture. The shapes below do not: they come from the harness's source code, from earlier
+readers, or from synthetic cases, and no live run has confirmed them. They are **not
+established**. An implementation may rely on them only as far as the fixture does. A later live
+run that confirms or corrects one updates this list and the package's `docs/live-check.md`.
+
+### Every harness
+
+- The join between a session's hook events and its records.
+- What the usage numbers count (sessions-model §2.4). Where the flags are set (Claude Code, Codex, Gemini CLI,
+  OpenCode v1), they rest on vendor definitions, not on a stored total. Where they are null,
+  what `input` and `output` count is unknown.
+
+### Claude Code and Codex
+
+- The fixtures are synthetic, following long-running readers. A tool call, a compaction and a
+  sub-agent are not confirmed against a live session.
+- Whether Codex's `item_completed` CommandExecution event names a call id, so `exit_code` can
+  be joined.
+
+### Copilot CLI
+
+- The wording a fork child writes about itself.
+- That a `usage_record` comes before the message it bills.
+
+### Gemini CLI
+
+- The sub-agent file layout, compaction, and `orderIds`.
+
+### VS Code
+
+- `modelState` values other than 1, `kind 3` entries, and a `kind 0` in the middle of a file.
+
+### Goose
+
+- The usage ledger's time window, and the compaction anchor found by time.
+- Four lab rows completed by hand.
+
+### OpenCode
+
+- The DDL, rebuilt from the spec and the captured columns.
+- A v2 assistant row, rebuilt from its events.
+
+### Antigravity CLI (agy)
+
+- Whether a rewind deletes `gen_metadata` and `executor_metadata` rows.
+- Whether a `response_id` is unique.
+
+### Cursor IDE
+
+- The lab case is thin: composerData and bubbles were captured at different moments, and two
+  `params` cells were completed by hand.
+- A rewind (expected implicit, truncated on the next send) and a delete.
+- Where tokens are stored on a paid plan (the free plan stores `{0,0}`), and whether each child
+  bubble carries its own call's counts.
+- Whether an older Cursor without `composerHeaders` leaves bubbles behind on delete.
+- How tool and text bubbles interleave; a sub-agent link (synthetic only); composerData as TEXT
+  and bubbles as BLOB; whether `empty-state-draft` is reused.
+
+### cursor-agent
+
+- An ACP store (`acp-sessions/<id>/store.db`) holding a turn.
+- An MCP call and the `google.protobuf.Value` shapes in its arguments.
+- Step kind 34 (truncated in the source).
+- Whether a step is written while it streams.
+
+### Zed
+
+- Resume, compaction, the parent-side `spawn_agent` link, a Mention and an Image (from source,
+  synthetic fixtures).
+- The `sidebar_threads` schema.
+- After a checkpoint restore, whether a turn that survives the restore keeps its
+  `request_token_usage` entry. (The restore and the regrow themselves are established by a lab
+  capture, the package's `zed/restore-lab` fixture; it restored to the first message.)
+- Editing and deleting a thread, and the rule that detects a legacy agent-1 thread.
+
+### Devin Local
+
+- No lab case: the samples are single rows, not whole trees.
+- The `subagent_heads` row while a sub-agent runs (inferred).
+- `/clear` (expected invisible), the hook join, `client: 'devin'`, and the hidden summary-agent
+  session (`kind: 'hidden'`).
