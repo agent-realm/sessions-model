@@ -121,10 +121,11 @@ v1.1: every operation also takes an optional `features` (§5). With `features: [
     rollback-journal writer);
   - `inconsistent`: the read saw a state the harness never commits whole: a torn view across rows
     or sources (Cursor IDE's listed bubble that is not there yet, Devin's `main_chain_id` pointing
-    at a node another transaction has not written, cursor-agent's missing blob). Only the main
-    chain's head tears a Devin read: a sub-agent head pointing at a node the read lacks does not.
-    derive leaves that sub-agent's chain out, the raw unit keeps the head row, and a later read
-    that holds the node derives the chain (v1.2);
+    at a node another transaction has not written, cursor-agent's missing blob). Only the main line
+    itself tears a Devin read: its head and the parent links along it. A node the main line only
+    names (a sub-agent head, a compacted history's prior nodes, a sub-agent chain a tool result
+    names) that the read lacks does not: derive leaves out what it would have reached, the raw unit
+    keeps the naming row, and a later read that holds the node derives it (v1.2);
   - `damaged`: a corrupt page, or a committed row that does not parse.
 
   The engine retries all three with backoff. It never treats them as an empty or vanished source.
@@ -132,7 +133,8 @@ v1.1: every operation also takes an optional `features` (§5). With `features: [
   last derived state.
   A retryable error that outlasts the engine's retry budget while the session's `updated_hint` is
   unchanged is reported for the session: the engine stops retrying that session until
-  `updated_hint` moves, and the session keeps its last derived state (v1.2).
+  `updated_hint` moves, apart from its scheduled re-read (below), and the session keeps its last
+  derived state (v1.2).
 
 **`updated_hint`** is the adapter's opaque change key for a session: a cheap value, read by `list`,
 that moves when the session's content moves (a file's size and mtime, an index row's update
