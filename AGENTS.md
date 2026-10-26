@@ -25,8 +25,8 @@ examples; `scripts/guard.mjs` and `scripts/check-tutorial.mjs` are checks; CI ru
   print `guard: clean`. A pushed branch of a public repo is already published.
   - It checks the tracked files' paths and lines, and each commit's author and committer names,
     message, every path it touches and every line it adds, for private detail: credential shapes,
-    home paths with a user name, private IP addresses, e-mail addresses other than noreply, example
-    and the maintainer's public one, machine numbers, and process wording. It also fails a contract
+    home paths with a user name (outside web URLs), private IP addresses, e-mail addresses other
+    than noreply and example ones, machine numbers, and process wording. It also fails a contract
     whose H1 carries no version. Commit author and committer addresses may be any GitHub-account
     address.
   - It prints file and line, or commit, never the matched text of a line. A hit in a path prints
@@ -39,6 +39,10 @@ examples; `scripts/guard.mjs` and `scripts/check-tutorial.mjs` are checks; CI ru
     repository in any form.
   - `node scripts/guard.mjs --self-test` runs the guard's own cases. Add a case with every fix to a
     check.
+  - A push to `main` scans only the commits it brings. **Whenever the guard's rules tighten**, run
+    it over the whole history once: `node scripts/guard.mjs --commits HEAD` locally, or the CI
+    workflow by hand (Actions, CI, Run workflow). A hit in old history is reported to the
+    maintainer; history is never rewritten to clear it.
 - **The examples and the tutorial:** use harness-skeleton's `packages/session-adapters` at the ref
   pinned in `.github/workflows/ci.yml`, and give the package as an absolute path.
   - `node examples/generate.mjs <package> examples` must report `ALL VALID` and change or add no
