@@ -301,7 +301,7 @@ run that confirms or corrects one updates this list and the package's `docs/live
 - The DDL, rebuilt from the spec and the captured columns.
 - A v2 assistant row, rebuilt from its events.
 
-### Antigravity CLI (agy)
+### Antigravity (agy)
 
 - Whether a rewind deletes `gen_metadata` and `executor_metadata` rows.
 - Whether a `response_id` is unique.
