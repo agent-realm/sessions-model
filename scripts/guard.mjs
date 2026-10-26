@@ -30,10 +30,11 @@ const CHECKS = {
     [...l.matchAll(/(password|passwd|token|api[_-]?key|secret)["']?\s*[=:]\s*["']?([A-Za-z0-9\/+_.-]{12,})/gi)]
       .some((m) => /\d/.test(m[2]) && /[A-Za-z]/.test(m[2])),
   'home path with a user name': (l) => {
-    // A path inside a URL with a host is not a home path. Only the URL token itself is set aside,
-    // so a home path elsewhere on the line (the next JSON value, say) is still checked. A URL with
-    // an empty host (unix:///…, sqlite:////…) and any scheme ending in "file" stay checked.
-    const rest = l.replace(/\b(?![A-Za-z0-9+.-]*file:)[A-Za-z][A-Za-z0-9+.-]+:\/\/[^\s\/"'<>()\[\]{},|`^][^\s"'<>()\[\]{},|`^]*/gi, ' ');
+    // A path inside a web URL (http, https, ws, wss) with a host is not a home path: it names a
+    // resource on a server. Only the URL token itself is set aside, so a home path elsewhere on the
+    // line (the next JSON value, say) is still checked. Every other scheme stays checked: ssh://,
+    // git+ssh://, rsync:// and file:// paths are paths on a real machine.
+    const rest = l.replace(/\b(https?|wss?):\/\/[^\s\/"'<>()\[\]{},|`^][^\s"'<>()\[\]{},|`^]*/gi, ' ');
     return /\/(Users|users|home)\/(?!user\b|me\b|you\b|runner\b)[A-Za-z0-9_]/.test(rest) ||
       /[A-Za-z]:\\+Users\\+(?!user\b|public\b)[A-Za-z0-9_]/i.test(rest);
   },
@@ -46,15 +47,15 @@ const CHECKS = {
   'process wording': (l) =>
     /\bpilot\b|\[via [^\]]+\]|\brelayed (via|by)\b|\bfirst-hand\b|\bcanon(?!ical)|\bumbrella\b|\bconstellation\b/i.test(l),
 };
-// noreply addresses, example domains, and the maintainer's public address (ramazanpolat@gmail.com).
-const EMAIL_OK = /^([0-9]+\+)?[A-Za-z0-9-]+@users\.noreply\.github\.com$|^noreply@(github|anthropic)\.com$|@example\.(com|org|net)$|^ramazanpolat@gmail\.com$/;
+// noreply addresses and example domains.
+const EMAIL_OK = /^([0-9]+\+)?[A-Za-z0-9-]+@users\.noreply\.github\.com$|^noreply@(github|anthropic)\.com$|@example\.(com|org|net)$/;
 
 const ALLOW = {
   'process wording': [/^\s*\/\\bpilot\\b\|\\\x5bvia /],   // the pattern above, in this file
 };
 
 // Cases for --self-test: [line, check, expected]. Paths are split so this file stays clean.
-const H = '/ho' + 'me/', U = '/Us' + 'ers/';
+const H = '/ho' + 'me/', U = '/Us' + 'ers/', AT = '@';
 const SELF_TEST = [
   ['{"url":"https://example.com","cwd":"' + H + 'alice/project"}', 'home path with a user name', true],
   ['{"url":"https://example.com' + H + 'alice/project"}', 'home path with a user name', false],
@@ -68,7 +69,10 @@ const SELF_TEST = [
   ['C:/' + U + 'bob/x', 'home path with a user name', true],
   ['|https://example.com|' + H + 'alice|', 'home path with a user name', true],
   ['`https://example.com`' + H + 'alice', 'home path with a user name', true],
-  ['ssh://host' + H + 'alice', 'home path with a user name', false],
+  ['ssh://host' + H + 'alice', 'home path with a user name', true],
+  ['git+ssh://git' + AT + 'bench' + H + 'alice/repo.git', 'home path with a user name', true],
+  ['rsync://bench' + H + 'alice/data', 'home path with a user name', true],
+  ['wss://example.com' + H + 'alice/socket', 'home path with a user name', false],
   ['sessions-model@v1.1', 'e-mail address', false],
 ];
 
