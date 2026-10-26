@@ -124,8 +124,12 @@ v1.1: every operation also takes an optional `features` (§5). With `features: [
     at a node another transaction has not written, cursor-agent's missing blob). Only the main line
     itself tears a Devin read: its head and the parent links along it. A node the main line only
     names (a sub-agent head, a compacted history's prior nodes, a sub-agent chain a tool result
-    names) that the read lacks does not: derive leaves out what it would have reached, the raw unit
-    keeps the naming row, and a later read that holds the node derives it (v1.2);
+    names) that the read lacks does not (v1.2):
+    - derive leaves out what that node would have reached, and the raw unit keeps the naming row;
+    - records derive wrote earlier among them are `held`, and so are a compaction record and its
+      summary that point into the missing nodes;
+    - records the gap only moves (a message's `order`, the session's `fingerprint`) are revised,
+      and revised back once a later read holds the node and derives it;
   - `damaged`: a corrupt page, or a committed row that does not parse.
 
   The engine retries all three with backoff. It never treats them as an empty or vanished source.
