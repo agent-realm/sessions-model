@@ -377,7 +377,7 @@ Neither enters `cmp_sha`, as the message's own do not.
 | `text` | `text` | |
 | `reasoning` | `text` \| `opaque: true`, `signature_len` | `opaque` covers an empty value with an id (VS Code), encrypted content (VS Code Copilot engine) and signature-only records (agy, droid) |
 | `tool_call` | `call_id`, `name`, `args` (JSON), `server` (MCP) | |
-| `tool_result` | `call_id`, `is_error` (true \| false \| null), `status` (`completed` \| `cancelled` \| `denied`), `output` \| `output_ref`, `output_len`, `truncated`, `exit_code` (integer \| null) | `output_ref` is `{ref, sha256, bytes}` for output kept elsewhere: `ref` names it (a spilled side file of OpenCode `tool-output/`, Gemini `tool-outputs/` or agy `steps/<n>/output.txt`; a cursor-agent `blob:<id>`), and `sha256` and `bytes` describe its content, so a consumer can check a copy without reading the harness store. Both are null when the content is no longer stored (OpenCode cleans its spills up). `exit_code` is a shell tool's, where the harness store keeps it apart from the output (Zed keeps it only inside the text). `is_error` is the harness store's own flag. It is null where the harness store has no flag (CommandCode), and where its flag is unreliable: Zed stores `false` for a failing command, and a flag that says success beside a shell's non-zero `exit_code` is unreliable for that result (Copilot CLI and Codex store `success: true` so): that result's `is_error` is null, and the harness store's other results keep the flag. An adapter never derives `is_error` from `exit_code` or from the output's text: a consumer that wants to know whether a command failed reads `exit_code` |
+| `tool_result` | `call_id`, `is_error` (true \| false \| null), `status` (`completed` \| `cancelled` \| `denied`), `output` \| `output_ref`, `output_len`, `truncated`, `exit_code` (integer \| null) | `output_ref` is `{ref, sha256, bytes}` for output kept elsewhere: `ref` names it (a spilled side file of OpenCode `tool-output/`, Gemini `tool-outputs/` or agy `steps/<n>/output.txt`; a cursor-agent `blob:<id>`), and `sha256` and `bytes` describe its content, so a consumer can check a copy without reading the harness store. Both are null when the content is no longer stored (OpenCode cleans its spills up). `exit_code` is a shell tool's, where the harness store keeps it apart from the output (Zed keeps it only inside the text). `is_error` is the harness store's own flag. It is null where the harness store has no flag (CommandCode), and where its flag is unreliable: Zed stores `false` for a failing command, and a flag that says success beside a shell's non-zero `exit_code` is unreliable for that result (Copilot CLI and Codex store `success: true` so): that result's `is_error` is null, and the harness store's other results keep the flag. `is_error` describes a call that completed: with `status` `cancelled` or `denied` (agy `CANCELED`, `INTERRUPTED`; a Cursor denial, cancel or abort) it is null, and the status carries the fact. An adapter never derives `is_error` from `exit_code` or from the output's text: a consumer that wants to know whether a command failed reads `exit_code` |
 | `attachment` | `media_type`, `inline` (base64), `ref` (path), `bytes_len` | one of `inline` and `ref` is null. Images inline (Copilot, CommandCode, droid); PDFs by path (droid) |
 | `summary` | `text`, `replaces` | a compaction summary. **Never a delete**: the replaced messages stay current |
 | `error` | `error_kind`, `message`, `http_status` | provider and harness errors stored in the transcript. The field is `error_kind`, because `kind` is the part's own |
@@ -775,8 +775,9 @@ re-derives (sessions §4):
   not say who wrote the session (§1 rule 3);
 - an adapter never mints a session `kind` (§2.1);
 - a thread's selected model, where it is the only model stored, is `requested_model` (§2.2);
-- `is_error` is the harness store's flag, null where it is missing or unreliable, never derived
-  from `exit_code` or text (§2.3);
+- `is_error` is the harness store's flag, null where it is missing or unreliable or the call did
+  not complete (`cancelled`, `denied`), never derived from `exit_code` or text (§2.3, with a
+  conformance item);
 - a Zed thread with no `cumulative_token_usage` has `per_turn` usage records (§2.4);
 - a service-held harness store has an `s-` `host` derived from the service's domain, and the
   service's origin as `harness_path` (§1). A reader that checks `host`'s form (sessions-sql's
@@ -844,6 +845,10 @@ harnesses (`packages/session-adapters/docs/conformance-matrix.md`).
       a pre-restore key, while their positions are reused.
 - [ ] **Tool linkage:** every `tool_call` with a result links to exactly one `tool_result` with
       the same `call_id`. A combined native part yields `<id>:call` and `<id>:result`.
+- [ ] **`is_error`** (v1.2): every `tool_result` copies the harness store's own flag, and is null
+      where the harness store has none, where the flag says success beside a shell's non-zero
+      `exit_code`, and where `status` is `cancelled` or `denied`. A fixture result with a non-zero
+      `exit_code` and no failure flag never has `is_error` true.
 - [ ] **Folding:** a harness store that repeats a native id (Gemini CLI, Devin) yields one record per key,
       in its last state.
 - [ ] **Migration fold:** in `gemini-cli/rewind/`, the two identical errors stay two messages. For a CommandCode adapter, once one exists: in a migrated session, entries 5–7 fold into 2–4 as aliases, and entry 8 is re-parented to the original it copies (§1 rule 5).
