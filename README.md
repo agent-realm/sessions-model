@@ -42,7 +42,7 @@ yet.
 
 | Role | Project |
 |---|---|
-| provider | [harness-skeleton](https://github.com/agent-realm/harness-skeleton): the session-adapters package (`packages/session-adapters`), one adapter per harness |
+| provider | [harness-skeleton](https://github.com/agent-realm/harness-skeleton): the harness-session-adapters package (`packages/harness-session-adapters`), one adapter per harness |
 | storage | [harness-sessions-sql](https://github.com/agent-realm/harness-sessions-sql): the records as SQL tables (ClickHouse normative, PostgreSQL allowed) |
 | consumer | memhouse: agent conversation memory |
 

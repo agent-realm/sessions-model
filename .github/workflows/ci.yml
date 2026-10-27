@@ -14,8 +14,8 @@ permissions:
 
 env:
   # The provider whose seal() and validateSession() the examples and the tutorial are checked
-  # against: harness-skeleton's packages/session-adapters, pinned. Move the pin by PR.
-  HARNESS_SKELETON_REF: 43407a992263d4c63e429861c7855691eecc36e5
+  # against: harness-skeleton's packages/harness-session-adapters, pinned. Move the pin by PR.
+  HARNESS_SKELETON_REF: 893fa1cfbbf0e77aeedb7dea421d7880c59e0f58
 
 jobs:
   guard:
@@ -75,7 +75,7 @@ jobs:
           node-version: 22
       - name: Regenerate and validate the examples
         run: |
-          node examples/generate.mjs "$GITHUB_WORKSPACE/.provider/harness-skeleton/packages/session-adapters" examples
+          node examples/generate.mjs "$GITHUB_WORKSPACE/.provider/harness-skeleton/packages/harness-session-adapters" examples
           git status --porcelain -- examples
           test -z "$(git status --porcelain -- examples)"
       - name: Run the tutorial

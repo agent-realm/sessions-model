@@ -14,7 +14,7 @@ examples; `scripts/guard.mjs` and `scripts/check-tutorial.mjs` are checks; CI ru
 
 - A guide in `docs/` explains a contract and never overrides it: where they differ, fix the guide.
 - Every example in `examples/` must stay valid. After changing one, regenerate and validate:
-  `node examples/generate.mjs <path to session-adapters> examples`, which must report
+  `node examples/generate.mjs <path to harness-session-adapters> examples`, which must report
   `ALL VALID`. The script uses the provider's own `seal()` and `validateSession()`.
 - Examples are synthetic. Use the contract's known-answer `host`, and never data from a real
   machine.
@@ -43,7 +43,7 @@ examples; `scripts/guard.mjs` and `scripts/check-tutorial.mjs` are checks; CI ru
     it over the whole history once: `node scripts/guard.mjs --commits HEAD` locally, or the CI
     workflow by hand (Actions, CI, Run workflow). A hit in old history is reported to the
     maintainer; history is never rewritten to clear it.
-- **The examples and the tutorial:** use harness-skeleton's `packages/session-adapters` at the ref
+- **The examples and the tutorial:** use harness-skeleton's `packages/harness-session-adapters` at the ref
   pinned in `.github/workflows/ci.yml`, and give the package as an absolute path.
   - `node examples/generate.mjs <package> examples` must report `ALL VALID` and change or add no
     file.

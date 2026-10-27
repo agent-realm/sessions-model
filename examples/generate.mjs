@@ -1,10 +1,10 @@
 // Generates examples/ from synthetic records, seals each record with the
-// session-adapters package's own seal() (cmp_sha, content_sha), and validates every file with
+// harness-session-adapters package's own seal() (cmp_sha, content_sha), and validates every file with
 // the package's validateSession(). Prints findings; exits non-zero on any.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const PKG = process.argv[2];   // .../packages/session-adapters (exported from a known commit)
+const PKG = process.argv[2];   // .../packages/harness-session-adapters (exported from a known commit)
 const OUT = process.argv[3];   // the examples/ directory
 const { seal } = await import(join(PKG, 'src/records.js'));
 const { validateSession } = await import(join(PKG, 'src/validate.js'));
