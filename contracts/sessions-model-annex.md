@@ -275,7 +275,9 @@ follows. A string not listed here never decides `cancelled` or `denied`, and the
 
 How a string matches:
 - **zed:** only in the shape Zed writes a canned result: `is_error` true and exactly one text item
-  holding the string, as Zed's own check for a cancelled result reads it.
+  holding the string, as Zed's own check for a cancelled result reads it, or a single text value in
+  place of the list, as builds before Zed's multi-part tool output stored it (v1.24.3 still reads
+  that form).
 - **goose:** the whole text of an MCP error result with one text block.
 - **opencode:** equality with `state.error`. A tool that throws exactly that sentence would collide;
   none is observed.
@@ -287,7 +289,9 @@ Read as `completed` under the rule, with the harness store's flag:
 
 Strings found in source and not adopted yet: Zed's per-tool "… cancelled by user" errors and its
 sandbox and policy denials (templates, not fixed strings), and the Goose CLI's own cancel message
-(that call carries a stored denial already).
+(that call carries a stored denial already), and OpenCode v2's "Tool execution interrupted". OpenCode
+v1's interrupted call needs no string: its error part's `metadata.interrupted` is a structured
+marker, read as `cancelled`.
 
 ---
 
@@ -335,6 +339,7 @@ run that confirms or corrects one updates this list and the package's `docs/live
 
 - The DDL, rebuilt from the spec and the captured columns.
 - A v2 assistant row, rebuilt from its events.
+- An interrupted tool call (an error part with `metadata.interrupted`), read from source only.
 
 ### Antigravity (agy)
 
