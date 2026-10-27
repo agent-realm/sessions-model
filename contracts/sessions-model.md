@@ -1,6 +1,6 @@
-# Contract: sessions-model v1.2
+# Contract: sessions-model v1.3
 
-**version:** v1.2
+**version:** v1.3
 **between:** session adapters (providers) ↔ any consumer of what a harness keeps: memhouse's
 capture engine, harness-skeleton's `sessions read`, a dashboard, an importer
 **status:** the harness-neutral shape of a harness store's conversation data: one model, one adapter
@@ -111,7 +111,7 @@ Every key starts with the folder the session lives in, on the host it lives on:
   containers with the same paths inside (`/root/.claude`) would share one key for two harness
   stores, so a container does not borrow its machine's id: it has its own machine id, or no
   readable id and so the `r-` value.
-- **A service-held harness store** (v1.2) keeps its sessions on a service, not on a machine:
+- **A service-held harness store** (v1.3) keeps its sessions on a service, not on a machine:
   claude.ai's conversations, read from an account's export. `host` = `s-` + the first 32
   lowercase hex digits of sha256 over the UTF-8 bytes of `sessions-model/service-host/v0:`
   followed by the service's domain in lowercase (`claude.ai`). Every importer derives the same
@@ -131,7 +131,7 @@ binds a harness to it):
 - **never** a working directory.
 
 A **service-held harness store** (above) has no data folder: its `harness_path` is the service's
-origin, `https://` followed by the domain (`https://claude.ai`) (v1.2).
+origin, `https://` followed by the domain (`https://claude.ai`) (v1.3).
 
 **A harness bound to one database file** rather than a folder has that file's real path as
 `harness_path`, under the same rules. A harness store is a **folder harness store** when its
@@ -185,9 +185,9 @@ Rules:
    session is `client`. `harness` takes one value from this registry (§8): `claude-code`, `codex`,
    `copilot-cli`, `vscode`, `cursor`, `cursor-agent`, `agy`, `antigravity`, `opencode`, `goose`,
    `gemini-cli`, `commandcode`, `droid`, `devin`, `zed`, `kiro`, `jetbrains-copilot`, `pi`,
-   `reference-harness`, `claude-ai`. `reference-harness` is the conformance reference harness that harness-skeleton plans: a program of its own whose native store is these records. `claude-ai` is claude.ai's conversations, a service-held harness store (v1.2). A
+   `reference-harness`, `claude-ai`. `reference-harness` is the conformance reference harness that harness-skeleton plans: a program of its own whose native store is these records. `claude-ai` is claude.ai's conversations, a service-held harness store (v1.3). A
    new harness adds its value in a v1.x. Two engines of one harness are told apart by `engine`.
-   `client` takes its value from the same registry (v1.2): the harness's own id when the harness
+   `client` takes its value from the same registry (v1.3): the harness's own id when the harness
    wrote the session, another program's id when that program wrote into this harness store
    (VS Code into Copilot's, below), and null when the harness store does not say who wrote it. A
    writer the registry lacks is added in a v1.x; until then its sessions carry null.
@@ -443,7 +443,7 @@ the total only, and the other values stay in raw units: Zed's `request_token_usa
 sum to its `cumulative_token_usage` (annex), so Zed has one `per_session` record. Where a Zed
 thread's `cumulative_token_usage` is empty or absent, there is no total to overlap: the adapter
 emits each `request_token_usage` entry as its own record, `per_turn`, anchored `{message_id}` to
-the user message the entry is keyed by (v1.2). An entry keyed by a user message the thread no longer
+the user message the entry is keyed by (v1.3). An entry keyed by a user message the thread no longer
 holds (after a checkpoint restore) is still emitted, anchored to that id: it is spend. The running
 turn's entry is held with its reply (sessions §2).
 
@@ -755,7 +755,7 @@ values is one of two kinds.
   Removing or renaming a registry value still needs v2.
 
   Added since v1: `ts_source` `legacy` (v1.1, §2.1); `client` values, which are the `harness`
-  registry's, and the `harness` `claude-ai` (v1.2, §1 rule 3).
+  registry's, and the `harness` `claude-ai` (v1.3, §1 rule 3).
 
 sessions has its own (sessions §5).
 
@@ -769,7 +769,8 @@ sessions has its own (sessions §5).
 - **`continuation`** sharpened, with `at` a message id (§2.5).
 - **Gemini's tool-use prompt tokens:** the `tool_prompt` counter (§2.4).
 
-**Clarified in v1.2.** An adapter that derived otherwise bumps its `adapter_ver`, so the engine
+**Clarified in v1.3** (there is no v1.2: the v1.2.0 release carried v1.1, and from v1.3 a contract
+version and its release tag agree). An adapter that derived otherwise bumps its `adapter_ver`, so the engine
 re-derives (sessions §4):
 - `client` takes its values from the `harness` registry, and is null when the harness store does
   not say who wrote the session (§1 rule 3);
@@ -781,7 +782,7 @@ re-derives (sessions §4):
 - a Zed thread with no `cumulative_token_usage` has `per_turn` usage records (§2.4);
 - a service-held harness store has an `s-` `host` derived from the service's domain, and the
   service's origin as `harness_path` (§1). A reader that checks `host`'s form (sessions-sql's
-  `CHECK`) accepts `s-` from v1.2.
+  `CHECK`) accepts `s-` from v1.3.
 
 **Deferred out of v1:**
 - joining launch records from harness-skeleton's `hs` tool onto other harnesses' sessions, which is consumer-side work;
@@ -845,7 +846,7 @@ harnesses (`packages/session-adapters/docs/conformance-matrix.md`).
       a pre-restore key, while their positions are reused.
 - [ ] **Tool linkage:** every `tool_call` with a result links to exactly one `tool_result` with
       the same `call_id`. A combined native part yields `<id>:call` and `<id>:result`.
-- [ ] **`is_error`** (v1.2): every `tool_result` copies the harness store's own flag, and is null
+- [ ] **`is_error`** (v1.3): every `tool_result` copies the harness store's own flag, and is null
       where the harness store has none, where the flag says success beside a shell's non-zero
       `exit_code`, and where `status` is `cancelled` or `denied`. A fixture result with a non-zero
       `exit_code` and no failure flag never has `is_error` true.
@@ -915,7 +916,7 @@ Two wrong answers that a reader must not produce, because each shows a known mis
 - `306d491e299c0cafad3f50eda755590e` for the Linux row. That is the hash with the trailing newline
   kept, and surrounding whitespace is stripped.
 
-**Service-held `host`** (v1.2): sha256 over `sessions-model/service-host/v0:` followed by the
+**Service-held `host`** (v1.3): sha256 over `sessions-model/service-host/v0:` followed by the
 domain, computed on 2026-10-27 by the same three tools, which agree.
 
 | Service domain | Expected `host` |

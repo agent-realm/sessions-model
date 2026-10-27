@@ -1,4 +1,4 @@
-# Annex to sessions-model v1.2: mapping per harness and conformance cases
+# Annex to sessions-model v1.3: mapping per harness and conformance cases
 
 **status:** informative, not normative. The normative text is [sessions-model](sessions-model.md).
 
@@ -256,7 +256,7 @@ the session-adapters package's fixtures in
 
 ---
 
-## 5. Fixed strings that mark a call cancelled or denied (v1.2)
+## 5. Fixed strings that mark a call cancelled or denied (v1.3)
 
 sessions-model §2.3 lets a harness's own fixed string mark a `tool_result` `cancelled` or `denied`,
 where the harness writes that string itself for the case (never tool or model output), matched
@@ -266,9 +266,9 @@ follows. A string not listed here never decides `cancelled` or `denied`, and the
 
 | Harness | Exact text | Marks | Source |
 |---|---|---|---|
-| zed | `Tool canceled by user` | `cancelled` | Zed v1.24.3, `crates/agent/src/thread.rs` (the constant, and where a cancelled call writes it) |
-| zed | `Permission to run tool denied by user` | `denied` | Zed v1.24.3, `crates/agent/src/thread.rs` |
-| zed | `Permission denied: user sent a follow-up message instead of approving the tool call.` | `denied` | Zed v1.24.3, `crates/agent/src/thread.rs` |
+| zed | `Tool canceled by user` | `cancelled` | Zed v1.34.3, `crates/agent/src/thread.rs` (the constant, and where a cancelled call writes it) |
+| zed | `Permission to run tool denied by user` | `denied` | Zed v1.34.3, `crates/agent/src/thread.rs` |
+| zed | `Permission denied: user sent a follow-up message instead of approving the tool call.` | `denied` | Zed v1.34.3, `crates/agent/src/thread.rs` |
 | goose | `The user has declined to run this tool. DO NOT attempt to call this tool again. If there are no alternative methods to proceed, clearly explain the situation and STOP.` | `denied` | Goose v1.55.0, `crates/goose/src/agents/tool_execution.rs` |
 | goose | `Tool call was interrupted before completing` (no final period) | `cancelled` | Goose v1.55.0, `crates/goose-agent/src/machine.rs` |
 | opencode | `The user rejected permission to use this specific tool call.` | `denied` | OpenCode v1.19.3, `packages/core/src/v1/permission.ts`, stored as the tool part's `state.error` |
