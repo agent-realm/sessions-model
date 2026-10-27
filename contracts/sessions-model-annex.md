@@ -266,9 +266,9 @@ follows. A string not listed here never decides `cancelled` or `denied`, and the
 
 | Harness | Exact text | Marks | Source |
 |---|---|---|---|
-| zed | `Tool canceled by user` | `cancelled` | Zed v1.34.3, `crates/agent/src/thread.rs` (the constant, and where a cancelled call writes it) |
-| zed | `Permission to run tool denied by user` | `denied` | Zed v1.34.3, `crates/agent/src/thread.rs` |
-| zed | `Permission denied: user sent a follow-up message instead of approving the tool call.` | `denied` | Zed v1.34.3, `crates/agent/src/thread.rs` |
+| zed | `Tool canceled by user` | `cancelled` | Zed v1.24.3, `crates/agent/src/thread.rs` (the constant, and where a cancelled call writes it) |
+| zed | `Permission to run tool denied by user` | `denied` | Zed v1.24.3, `crates/agent/src/thread.rs` |
+| zed | `Permission denied: user sent a follow-up message instead of approving the tool call.` | `denied` | Zed v1.24.3, `crates/agent/src/thread.rs` |
 | goose | `The user has declined to run this tool. DO NOT attempt to call this tool again. If there are no alternative methods to proceed, clearly explain the situation and STOP.` | `denied` | Goose v1.55.0, `crates/goose/src/agents/tool_execution.rs` |
 | goose | `Tool call was interrupted before completing` (no final period) | `cancelled` | Goose v1.55.0, `crates/goose-agent/src/machine.rs` |
 | opencode | `The user rejected permission to use this specific tool call.` | `denied` | OpenCode v1.19.3, `packages/core/src/v1/permission.ts`, stored as the tool part's `state.error` |
