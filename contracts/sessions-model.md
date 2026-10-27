@@ -55,7 +55,7 @@ Every key starts with the folder the session lives in, on the host it lives on:
 | **lifecycle** | session + `lifecycle_id` (§2.6) |
 
 **`host`** names the machine, or, for a service-held harness store, the service (below). Every reader on one machine derives the same value, so two readers
-(a consumer, a harness-skeleton driver, a sessions-sql loader) never key one session twice:
+(a consumer, a harness-skeleton driver, a harness-sessions-sql loader) never key one session twice:
 - `host` is the first 32 hex digits, lowercase, of sha256(`"sessions-model/host/v0:"` + the OS
   machine id), the whole input encoded as UTF-8. The machine id is the value's characters exactly
   as the OS stores them: only surrounding whitespace and newlines are stripped, with no case change,
@@ -706,7 +706,7 @@ facets. The split is [sessions](sessions.md).
 
 - **harness-skeleton:** its sessions addendum, its `sessions` capability facets and its
   `sessions read` cite **sessions-model@v1**. They do not copy it.
-- **[sessions-sql](https://github.com/agent-realm/sessions-sql)** maps these records to SQL tables.
+- **[harness-sessions-sql](https://github.com/agent-realm/harness-sessions-sql)** maps these records to SQL tables.
 
 ## 7. Design decisions
 
@@ -781,7 +781,7 @@ re-derives (sessions §4):
   conformance item);
 - a Zed thread with no `cumulative_token_usage` has `per_turn` usage records (§2.4);
 - a service-held harness store has an `s-` `host` derived from the service's domain, and the
-  service's origin as `harness_path` (§1). A reader that checks `host`'s form (sessions-sql's
+  service's origin as `harness_path` (§1). A reader that checks `host`'s form (harness-sessions-sql's
   `CHECK`) accepts `s-` from v1.3.
 
 **Deferred out of v1:**

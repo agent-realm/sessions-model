@@ -3,7 +3,7 @@
 **version:** v1.3
 **between:** session adapters, one per harness, in the session-adapters module of
 [harness-skeleton](https://github.com/agent-realm/harness-skeleton) (provider) ↔ memhouse's capture engine,
-the `sessions.*` shim in harness-skeleton's `hs` tool, and sessions-sql loaders (consumers)
+the `sessions.*` shim in harness-skeleton's `hs` tool, and harness-sessions-sql loaders (consumers)
 **status:** how an adapter reads a harness store and derives records, and who
 keeps what
 
