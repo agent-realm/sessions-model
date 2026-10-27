@@ -540,8 +540,9 @@ Every v1 adapter-side item above and every sessions-model item is proved for eac
 marked not applicable with its reason, in the module's conformance matrix
 (`packages/session-adapters/docs/conformance-matrix.md`), which its test suite keeps current. The
 `forget-notice` items are not proved yet: no harness writes forget notices today, so every adapter
-states `forget_notices: none`, and no consumer honours them yet. The v1.3 clarifications (sessions-model §8, and the Devin and
-retry rules in §2 here) are not proved yet; the module proves them in its next release.
+states `forget_notices: none`, and no consumer honours them yet. The v1.3 rules (sessions-model §8,
+the `is_error` item, and the Devin and retry rules in §2 here) are proved in the same matrix from
+the module's 1.0 release.
 
 The first consumer is memhouse's capture engine. The engine-side items are the consumer's to
 pass.
