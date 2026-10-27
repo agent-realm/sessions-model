@@ -1,6 +1,6 @@
-# Contract: sessions v1.1
+# Contract: sessions v1.3
 
-**version:** v1.1
+**version:** v1.3
 **between:** session adapters, one per harness, in the session-adapters module of
 [harness-skeleton](https://github.com/agent-realm/harness-skeleton) (provider) ↔ memhouse's capture engine,
 the `sessions.*` shim in harness-skeleton's `hs` tool, and sessions-sql loaders (consumers)
@@ -121,12 +121,24 @@ v1.1: every operation also takes an optional `features` (§5). With `features: [
     rollback-journal writer);
   - `inconsistent`: the read saw a state the harness never commits whole: a torn view across rows
     or sources (Cursor IDE's listed bubble that is not there yet, Devin's `main_chain_id` pointing
-    at a node another transaction has not written, cursor-agent's missing blob);
+    at a node another transaction has not written, cursor-agent's missing blob). Only the main line
+    itself tears a Devin read: its head and the parent links along it. A node the main line only
+    names (a sub-agent head, a compacted history's prior nodes, a sub-agent chain a tool result
+    names) that the read lacks does not (v1.3):
+    - derive leaves out what that node would have reached, and the raw unit keeps the naming row;
+    - records derive wrote earlier among them are `held`, and so are a compaction record and its
+      summary that point into the missing nodes;
+    - records the gap only moves (a message's `order`, the session's `fingerprint`) are revised,
+      and revised back once a later read holds the node and derives it;
   - `damaged`: a corrupt page, or a committed row that does not parse.
 
   The engine retries all three with backoff. It never treats them as an empty or vanished source.
   `damaged` that persists across retries is reported for the session, and the session keeps its
   last derived state.
+  A retryable error that outlasts the engine's retry budget while the session's `updated_hint` is
+  unchanged is reported for the session: the engine stops retrying that session until
+  `updated_hint` moves, apart from its scheduled re-read (below), and the session keeps its last
+  derived state (v1.3).
 
 **`updated_hint`** is the adapter's opaque change key for a session: a cheap value, read by `list`,
 that moves when the session's content moves (a file's size and mtime, an index row's update
@@ -521,14 +533,16 @@ never writing one for a source deletion) are the harness's to prove, by the fixt
 
 ## Verification status
 
-v1.1. The provider is the session-adapters module in harness-skeleton
+v1.3. The provider is the session-adapters module in harness-skeleton
 (`packages/session-adapters`), with an adapter for twelve harnesses: Claude Code, Codex, Copilot
 CLI, Gemini CLI, VS Code, Goose, OpenCode, agy, Cursor IDE, cursor-agent, Zed and Devin Local.
 Every v1 adapter-side item above and every sessions-model item is proved for each of them, or
 marked not applicable with its reason, in the module's conformance matrix
 (`packages/session-adapters/docs/conformance-matrix.md`), which its test suite keeps current. The
 `forget-notice` items are not proved yet: no harness writes forget notices today, so every adapter
-states `forget_notices: none`, and no consumer honours them yet.
+states `forget_notices: none`, and no consumer honours them yet. The v1.3 rules (sessions-model §8,
+the `is_error` item, and the Devin and retry rules in §2 here) are proved in the same matrix from
+the module's 1.0 release.
 
 The first consumer is memhouse's capture engine. The engine-side items are the consumer's to
 pass.

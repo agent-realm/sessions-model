@@ -1,4 +1,4 @@
-# Annex to sessions-model v1.1: mapping per harness and conformance cases
+# Annex to sessions-model v1.3: mapping per harness and conformance cases
 
 **status:** informative, not normative. The normative text is [sessions-model](sessions-model.md).
 
@@ -256,6 +256,45 @@ the session-adapters package's fixtures in
 
 ---
 
+## 5. Fixed strings that mark a call cancelled or denied (v1.3)
+
+sessions-model §2.3 lets a harness's own fixed string mark a `tool_result` `cancelled` or `denied`,
+where the harness writes that string itself for the case (never tool or model output), matched
+exactly. These are the strings. Each was read from the harness's source at the version its fixture
+follows. A string not listed here never decides `cancelled` or `denied`, and the call reads as
+`completed` with the harness store's own flag.
+
+| Harness | Exact text | Marks | Source |
+|---|---|---|---|
+| zed | `Tool canceled by user` | `cancelled` | Zed v1.34.3, `crates/agent/src/thread.rs` (the constant, and where a cancelled call writes it) |
+| zed | `Permission to run tool denied by user` | `denied` | Zed v1.34.3, `crates/agent/src/thread.rs` |
+| zed | `Permission denied: user sent a follow-up message instead of approving the tool call.` | `denied` | Zed v1.34.3, `crates/agent/src/thread.rs` |
+| goose | `The user has declined to run this tool. DO NOT attempt to call this tool again. If there are no alternative methods to proceed, clearly explain the situation and STOP.` | `denied` | Goose v1.55.0, `crates/goose/src/agents/tool_execution.rs` |
+| goose | `Tool call was interrupted before completing` (no final period) | `cancelled` | Goose v1.55.0, `crates/goose-agent/src/machine.rs` |
+| opencode | `The user rejected permission to use this specific tool call.` | `denied` | OpenCode v1.19.3, `packages/core/src/v1/permission.ts`, stored as the tool part's `state.error` |
+
+How a string matches:
+- **zed:** only in the shape Zed writes a canned result: `is_error` true and exactly one text item
+  holding the string, as Zed's own check for a cancelled result reads it, or a single text value in
+  place of the list, as builds before Zed's multi-part tool output stored it (v1.24.3 still reads
+  that form).
+- **goose:** the whole text of an MCP error result with one text block.
+- **opencode:** equality with `state.error`. A tool that throws exactly that sentence would collide;
+  none is observed.
+
+Read as `completed` under the rule, with the harness store's flag:
+- every agy denial: agy writes no fixed string or field for it that a public source shows, and its
+  denial error embeds the command. agy's `CANCELED` and `INTERRUPTED` still come from its status;
+- an OpenCode rejection with feedback, whose text embeds the user's words.
+
+Strings found in source and not adopted yet: Zed's per-tool "… cancelled by user" errors and its
+sandbox and policy denials (templates, not fixed strings), and the Goose CLI's own cancel message
+(that call carries a stored denial already), and OpenCode v2's "Tool execution interrupted". OpenCode
+v1's interrupted call needs no string: its error part's `metadata.interrupted` is a structured
+marker, read as `cancelled`.
+
+---
+
 ## Not established by a live run
 
 The session-adapters package (1.0) proves every adapter against fixtures. Most fixtures follow a
@@ -300,6 +339,7 @@ run that confirms or corrects one updates this list and the package's `docs/live
 
 - The DDL, rebuilt from the spec and the captured columns.
 - A v2 assistant row, rebuilt from its events.
+- An interrupted tool call (an error part with `metadata.interrupted`), read from source only.
 
 ### Antigravity (agy)
 
