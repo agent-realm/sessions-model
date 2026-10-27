@@ -191,9 +191,9 @@ anchored ids) are kept as the record of why those fields exist.
 
 The cases observed in the lab are not published with their source files. The conformance
 checklist in [sessions-model](sessions-model.md) states the cases an adapter must pass, against
-the session-adapters package's fixtures in
+the harness-session-adapters package's fixtures in
 [harness-skeleton](https://github.com/agent-realm/harness-skeleton)
-(`packages/session-adapters/fixtures/<harness>/<case>/`).
+(`packages/harness-session-adapters/fixtures/<harness>/<case>/`).
 
 ---
 
@@ -297,7 +297,7 @@ marker, read as `cancelled`.
 
 ## Not established by a live run
 
-The session-adapters package (1.0) proves every adapter against fixtures. Most fixtures follow a
+The harness-session-adapters package (1.0) proves every adapter against fixtures. Most fixtures follow a
 lab capture. The shapes below do not: they come from the harness's source code, from earlier
 readers, or from synthetic cases, and no live run has confirmed them. They are **not
 established**. An implementation may rely on them only as far as the fixture does. A later live

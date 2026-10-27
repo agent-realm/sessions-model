@@ -1,9 +1,9 @@
 # Contract: sessions v1.3
 
 **version:** v1.3
-**between:** session adapters, one per harness, in the session-adapters module of
+**between:** session adapters, one per harness, in the harness-session-adapters module of
 [harness-skeleton](https://github.com/agent-realm/harness-skeleton) (provider) ↔ memhouse's capture engine,
-the `sessions.*` shim in harness-skeleton's `hs` tool, and sessions-sql loaders (consumers)
+the `sessions.*` shim in harness-skeleton's `hs` tool, and harness-sessions-sql loaders (consumers)
 **status:** how an adapter reads a harness store and derives records, and who
 keeps what
 
@@ -392,7 +392,7 @@ A consumer that does not opt in keeps v1's behaviour: removed versions of what t
 
 - **Code does not cross the seam.** Only the operations, units, records, positions and facets do.
   An adapter can be any implementation that passes conformance, including a separate executable
-  speaking the JSON form of the four operations. The reference home is the session-adapters
+  speaking the JSON form of the four operations. The reference home is the harness-session-adapters
   module in harness-skeleton. harness-skeleton's `hs` tool wraps it and never
   re-implements a reader.
 - **Versions.** `model_version` major, `adapter_ver` and `state_ver` travel with every output. A
@@ -533,12 +533,12 @@ never writing one for a source deletion) are the harness's to prove, by the fixt
 
 ## Verification status
 
-v1.3. The provider is the session-adapters module in harness-skeleton
-(`packages/session-adapters`), with an adapter for twelve harnesses: Claude Code, Codex, Copilot
+v1.3. The provider is the harness-session-adapters module in harness-skeleton
+(`packages/harness-session-adapters`), with an adapter for twelve harnesses: Claude Code, Codex, Copilot
 CLI, Gemini CLI, VS Code, Goose, OpenCode, agy, Cursor IDE, cursor-agent, Zed and Devin Local.
 Every v1 adapter-side item above and every sessions-model item is proved for each of them, or
 marked not applicable with its reason, in the module's conformance matrix
-(`packages/session-adapters/docs/conformance-matrix.md`), which its test suite keeps current. The
+(`packages/harness-session-adapters/docs/conformance-matrix.md`), which its test suite keeps current. The
 `forget-notice` items are not proved yet: no harness writes forget notices today, so every adapter
 states `forget_notices: none`, and no consumer honours them yet. The v1.3 rules (sessions-model §8,
 the `is_error` item, and the Devin and retry rules in §2 here) are proved in the same matrix from

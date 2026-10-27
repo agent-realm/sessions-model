@@ -22,8 +22,8 @@ model by version.
   agy, OpenCode (the v1 and v2 engines), Goose, Gemini CLI, CommandCode, droid, Windsurf/Devin
   and Zed.
 - Eight of them have a full adapter spec, which is not published.
-- The fixtures this contract's conformance items cite are the session-adapters package's
-  (harness-skeleton `packages/session-adapters/fixtures/<harness>/<case>/`), public and synthetic
+- The fixtures this contract's conformance items cite are the harness-session-adapters package's
+  (harness-skeleton `packages/harness-session-adapters/fixtures/<harness>/<case>/`), public and synthetic
   or scrubbed. A fixture path below is relative to that folder.
 - Claude Code and Codex come from earlier source-identity work, not from the lab VM.
 - A rule that cites a harness comes from those specs or fixtures. A point inferred only from
@@ -55,7 +55,7 @@ Every key starts with the folder the session lives in, on the host it lives on:
 | **lifecycle** | session + `lifecycle_id` (§2.6) |
 
 **`host`** names the machine, or, for a service-held harness store, the service (below). Every reader on one machine derives the same value, so two readers
-(a consumer, a harness-skeleton driver, a sessions-sql loader) never key one session twice:
+(a consumer, a harness-skeleton driver, a harness-sessions-sql loader) never key one session twice:
 - `host` is the first 32 hex digits, lowercase, of sha256(`"sessions-model/host/v0:"` + the OS
   machine id), the whole input encoded as UTF-8. The machine id is the value's characters exactly
   as the OS stores them: only surrounding whitespace and newlines are stripped, with no case change,
@@ -706,7 +706,7 @@ facets. The split is [sessions](sessions.md).
 
 - **harness-skeleton:** its sessions addendum, its `sessions` capability facets and its
   `sessions read` cite **sessions-model@v1**. They do not copy it.
-- **[sessions-sql](https://github.com/agent-realm/sessions-sql)** maps these records to SQL tables.
+- **[harness-sessions-sql](https://github.com/agent-realm/harness-sessions-sql)** maps these records to SQL tables.
 
 ## 7. Design decisions
 
@@ -714,7 +714,7 @@ facets. The split is [sessions](sessions.md).
    Kiro, JetBrains) certify the sessions part only: this model and the [sessions](sessions.md)
    seam.
 2. **Adapter code may live anywhere that passes conformance.** The reference adapters live in
-   one place, the session-adapters package in
+   one place, the harness-session-adapters package in
    [harness-skeleton](https://github.com/agent-realm/harness-skeleton); harness-skeleton's `hs`
    tool wraps it and never re-implements a reader.
 3. **A session belongs to one folder on one host.** The same files read on another host, or
@@ -781,7 +781,7 @@ re-derives (sessions §4):
   conformance item);
 - a Zed thread with no `cumulative_token_usage` has `per_turn` usage records (§2.4);
 - a service-held harness store has an `s-` `host` derived from the service's domain, and the
-  service's origin as `harness_path` (§1). A reader that checks `host`'s form (sessions-sql's
+  service's origin as `harness_path` (§1). A reader that checks `host`'s form (harness-sessions-sql's
   `CHECK`) accepts `s-` from v1.3.
 
 **Deferred out of v1:**
@@ -797,7 +797,7 @@ re-derives (sessions §4):
   `state` (§2.2, §2.3);
 - the session record gained `setup`, and usage gained `tool_prompt`;
 - Codex's positional ids gained their rollout file name as a qualifier: the ids change once,
-  with the adapter's `adapter_ver` (§1 rule 8), and the session-adapters package's CHANGELOG
+  with the adapter's `adapter_ver` (§1 rule 8), and the harness-session-adapters package's CHANGELOG
   maps old keys to new.
 
 ## Conformance (adapter side)
@@ -808,8 +808,8 @@ certification. Engine-side checks live in [sessions](sessions.md).
 
 An item that names a harness applies to that harness's adapter. CommandCode and droid have no
 adapter yet (deferred on 2026-10-21), so the items that name them apply once one
-exists. The session-adapters package keeps a matrix of what proves each item for each of its
-harnesses (`packages/session-adapters/docs/conformance-matrix.md`).
+exists. The harness-session-adapters package keeps a matrix of what proves each item for each of its
+harnesses (`packages/harness-session-adapters/docs/conformance-matrix.md`).
 
 - [ ] **Replay:** for every session fixture, `derive` from empty state over the ordered raw units
       gives the expected folded final state. Every incremental split of the same units gives the
@@ -830,7 +830,7 @@ harnesses (`packages/session-adapters/docs/conformance-matrix.md`).
       two sessions. (A reader cannot detect a clone that kept its parent's id; the cloner's own
       check is that two machines cloned from one image report different machine ids.)
 - [ ] **Known answers:** every vector in *Known-answer vectors* below gives exactly its expected
-      `host` or `harness_path`, so memhouse, harness-skeleton's `hs` tool and the session-adapters module agree byte for
+      `host` or `harness_path`, so memhouse, harness-skeleton's `hs` tool and the harness-session-adapters module agree byte for
       byte.
 - [ ] **One harness store, one session:** the same files read under two hosts are two harness
       stores and give two sessions, with the same `session_id` and different session keys.

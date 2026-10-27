@@ -28,7 +28,7 @@ generations, reconciliation against `live` and `held`, retrying retryable errors
 
 ## Where the results live
 
-The reference provider, the session-adapters package in
+The reference provider, the harness-session-adapters package in
 [harness-skeleton](https://github.com/agent-realm/harness-skeleton), keeps a conformance matrix: one
 cell per item and harness, each citing the test or fixture that proves it, or saying why it does not
 apply.

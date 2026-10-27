@@ -57,7 +57,7 @@ The session record names the session once, and its `fingerprint` lists its messa
 `seal()` from the reference provider computes `cmp_sha` and `content_sha`:
 
 ```js
-import { seal } from '<harness-skeleton>/packages/session-adapters/src/records.js';
+import { seal } from '<harness-skeleton>/packages/harness-session-adapters/src/records.js';
 
 const m = seal(message);
 const session = seal({
@@ -72,7 +72,7 @@ const session = seal({
 ## 4. Validate
 
 ```js
-import { validateSession } from '<harness-skeleton>/packages/session-adapters/src/validate.js';
+import { validateSession } from '<harness-skeleton>/packages/harness-session-adapters/src/validate.js';
 
 console.log(validateSession([session, m], { harness: 'claude-code', sessionId: key.session_id }));
 // [] — no findings
