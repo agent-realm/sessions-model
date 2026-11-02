@@ -1,6 +1,6 @@
-# Contract: sessions-model v1.4.2
+# Contract: sessions-model v1.4.3
 
-**version:** v1.4.2
+**version:** v1.4.3
 **between:** session adapters (providers) ↔ any consumer of what a harness keeps: memhouse's
 capture engine, harness-skeleton's `sessions read`, a dashboard, an importer
 **status:** the harness-neutral shape of a harness store's conversation data: one model, one adapter
@@ -644,6 +644,11 @@ records): the native fields that the adapter declares for that record type, as a
     `content_sha` moves keeps the triples of its last write.
   - In an append-only archive (harness-sessions-sql §4.1) those triples still name the units that
     produced the record's content.
+- **A slot, not a version** (v1.4.3). Where a `unit_key` names a slot rather than a version (a
+  snapshot source, a delta row; [sessions](sessions.md) §1), the triple names the slot. The version
+  that produced the record is the one the archive held for that slot when the record was last
+  revised, so a reader resolves it by ingest order: the latest archived version of the slot at or
+  before the record's revision.
 - **A unit the consumer later removes** (a source vanished under a `removed` policy) leaves a
   triple that names nothing. A reader joins triples to its archive as an outer join.
 - **Absent** when the adapter emits none.
@@ -853,6 +858,10 @@ before them:
 **Clarified in v1.4.2** (no shape change). The `units` strings sort in Unicode code-point order,
 UTF-8 byte order (§2.7). JCS's UTF-16 order still sorts the object keys inside `content_sha` and
 `cmp_sha` (§2). No adapter emitted `units` before it.
+
+**Clarified in v1.4.3** (no shape change). A triple whose `unit_key` names a slot (a snapshot
+source, a delta row) names the slot, and a reader resolves the version by ingest order (§2.7). A
+unit's sha beside the triple waits for a v1.5, and only if a reader needs one.
 
 **Deferred out of v1:**
 - joining launch records from harness-skeleton's `hs` tool onto other harnesses' sessions, which is consumer-side work;
