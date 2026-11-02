@@ -45,6 +45,10 @@ as an empty or vanished source.
 - **Only explicit links and lifecycle records.** State a link or a lifecycle operation only where
   the harness store records it.
 - **`setup` is null** unless the harness store records the setup a session ran under.
+- **`native` is an allowlist** (v1.4, sessions-model §2.7). Declare in `describe` the native paths
+  you carry, per record type, and carry nothing else. Changing a list is an `adapter_ver` bump.
+- **`units` stays out of `content_sha`** (v1.4). Fill it from the `derive` input, with each
+  source's generation as given.
 
 ## Start from the examples
 

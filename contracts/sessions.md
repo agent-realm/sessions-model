@@ -1,6 +1,6 @@
-# Contract: sessions v1.3
+# Contract: sessions v1.4
 
-**version:** v1.3
+**version:** v1.4
 **between:** session adapters, one per harness, in the harness-session-adapters module of
 [harness-skeleton](https://github.com/agent-realm/harness-skeleton) (provider) ↔ memhouse's capture engine,
 the `sessions.*` shim in harness-skeleton's `hs` tool, and harness-sessions-sql loaders (consumers)
@@ -108,6 +108,9 @@ v1.1: every operation also takes an optional `features` (§5). With `features: [
   binder (harness-skeleton's `hs` tool) reads it instead of keeping its own list;
 - `ts_source`;
 - the redaction field paths and lint exemptions (sessions-model §4);
+- `native` (v1.4): per record type (`session`, `message`, `part`), the native field paths the
+  adapter carries in a record's `native` (sessions-model §2.7). Left out, or an empty list, means
+  none;
 - `volatile`, where a snapshot source has fields the harness rewrites without the conversation
   changing (Cursor IDE's view state, gauges and height hints): per source, the field paths `read`
   leaves out, so an unchanged session reads as unchanged;
@@ -174,6 +177,9 @@ output on any host.
     edit, a Gemini record revised with a pending call) therefore does not disappear and return.
   - Unit-level holds stay in `read` (`held_back`, §3). `held` is only for what a single unit
     cannot show.
+- A record's `units` (v1.4, sessions-model §2.7) name units of the `derive` input: each triple
+  takes the source's `generation` as the input gives it. A change in `units` alone does not put a
+  record in `changed`.
 - `derive` with empty state over every unit of every source's current generation is the **full
   replay**. The engine uses it for an `adapter_ver` upgrade from its archive,
   and to replay fixtures.
@@ -396,7 +402,8 @@ A consumer that does not opt in keeps v1's behaviour: removed versions of what t
   module in harness-skeleton. harness-skeleton's `hs` tool wraps it and never
   re-implements a reader.
 - **Versions.** `model_version` major, `adapter_ver` and `state_ver` travel with every output. A
-  model major mismatch refuses the adapter. A `state_ver` change makes the engine re-derive from
+  model major mismatch refuses the adapter. A change to `describe`'s `native` lists changes the
+  records, so it is an `adapter_ver` bump (v1.4). A `state_ver` change makes the engine re-derive from
   the archive with empty state.
 - **Every closed list is final for v1:** every field this contract defines as an enum or a fixed
   set of values. Adding a value to one needs v2, because a v1 consumer may refuse an unknown
@@ -533,7 +540,7 @@ never writing one for a source deletion) are the harness's to prove, by the fixt
 
 ## Verification status
 
-v1.3. The provider is the harness-session-adapters module in harness-skeleton
+v1.4. The provider is the harness-session-adapters module in harness-skeleton
 (`packages/harness-session-adapters`), with an adapter for twelve harnesses: Claude Code, Codex, Copilot
 CLI, Gemini CLI, VS Code, Goose, OpenCode, agy, Cursor IDE, cursor-agent, Zed and Devin Local.
 Every v1 adapter-side item above and every sessions-model item is proved for each of them, or
@@ -542,7 +549,9 @@ marked not applicable with its reason, in the module's conformance matrix
 `forget-notice` items are not proved yet: no harness writes forget notices today, so every adapter
 states `forget_notices: none`, and no consumer honours them yet. The v1.3 rules (sessions-model §8,
 the `is_error` item, and the Devin and retry rules in §2 here) are proved in the same matrix from
-the module's 1.0 release.
+the module's 1.0 release. The v1.4 fields, `native` and `units`, and their two sessions-model items
+(Native is declared, Units name the input) have no provider yet: no adapter emits them before
+its next `adapter_ver` bump.
 
 The first consumer is memhouse's capture engine. The engine-side items are the consumer's to
 pass.

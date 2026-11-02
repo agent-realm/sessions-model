@@ -1,6 +1,6 @@
-# Contract: sessions-model v1.3
+# Contract: sessions-model v1.4
 
-**version:** v1.3
+**version:** v1.4
 **between:** session adapters (providers) ↔ any consumer of what a harness keeps: memhouse's
 capture engine, harness-skeleton's `sessions read`, a dashboard, an importer
 **status:** the harness-neutral shape of a harness store's conversation data: one model, one adapter
@@ -284,7 +284,7 @@ Five record types: `session`, `message` (with nested parts), `usage`, `link` and
 record names its type in `type`, which takes exactly one of those five values, and carries its session key (`host`, `harness`, `harness_path`, `session_id`, `incarnation`),
 plus its own key fields (§1), and two hashes:
 - `content_sha` is the sha256 of the record's JCS canonical JSON, excluding `content_sha` and
-  `cmp_sha` themselves. It detects a revision.
+  `cmp_sha` themselves, and `units` (v1.4, §2.7). It detects a revision.
 - `cmp_sha` exists on messages only. It is a **semantic comparison hash**: two copies of one
   message in two sessions share it even when a fork re-minted their ids. It is the sha256 of the
   RFC 8785 (JCS) canonical JSON of this projection:
@@ -304,6 +304,9 @@ plus its own key fields (§1), and two hashes:
   - session titles and both hashes themselves.
 
   Ids inside content are content and stay in: a path in tool args, an id quoted in a reply.
+
+Two optional fields (v1.4) may come on records: `native`, on session, message and part records, and
+`units`, on every record (§2.7).
 
 ### 2.1 Session
 
@@ -590,6 +593,49 @@ How a harness store shows each operation, recorded in the adapter's `lifecycle.<
     after the derive are tombstoned by the consumer.
 - **invisible**: the harness store keeps no trace.
 
+### 2.7 Native fields and unit pointers (v1.4)
+
+Two additive optional fields, as §8 allows in a v1.x.
+
+**`native`**, on session and message records and on each part (not on usage, link or lifecycle
+records): the native fields that the adapter declares for that record type, as an object.
+- **Declared, never left over.** The adapter's `describe` lists, per record type (`session`,
+  `message`, `part`), the native field paths it carries ([sessions](sessions.md) §2). They are
+  written as the redaction paths are written (§4): a dotted path into the native record.
+  - `native` holds the value at each listed path that the native record has, keyed by the path,
+    and nothing else. A field that no list names is dropped.
+  - "Every field no other field maps" would carry exactly what hides there: environment variables,
+    tool configurations, tokens and absolute paths.
+- **Redacted like every other field** (§4): a value on a redaction path is replaced in `native`
+  too, and the lint covers it.
+- **A message folded from several native records** (Claude Code lines): their declared fields
+  merge into one object. Where two of them hold one path, the later one in `order` wins.
+- **Absent** when the adapter declares no path for the record type. `{}` when it declares some and
+  the native record holds none of them.
+- **Hashes.** It is inside `content_sha`, and outside `cmp_sha`, whose projection names its fields.
+- **Versioning.** A change to a list changes the records, so it is an `adapter_ver` bump
+  ([sessions](sessions.md) §5).
+- It has no meaning across harnesses. A reader that compares harnesses reads the shared fields.
+
+**`units`**, on every record: the raw units the record was derived from, as a list of
+`[source_key, generation, unit_key]` triples. The list is sorted by `source_key`, then
+`generation`, then `unit_key`, with no triple twice.
+- **What it names.** The units of the `derive` input that the record's current state comes from:
+  - a snapshot source's one unit;
+  - the lines of a stream that fold into the record;
+  - the rows of a delta source.
+  `generation` is the source's generation as the input gives it.
+- **Outside `content_sha`** (§2). A stream that is rewritten gets a new generation and new unit
+  keys while its records stay the same, and inside the hash every such reset would revise every
+  record.
+  - A change in `units` alone is not a revision. A consumer that writes a record only when
+    `content_sha` moves keeps the triples of its last write.
+  - In an append-only archive (harness-sessions-sql §4.1) those triples still name the units that
+    produced the record's content.
+- **A unit the consumer later removes** (a source vanished under a `removed` policy) leaves a
+  triple that names nothing. A reader joins triples to its archive as an outer join.
+- **Absent** when the adapter emits none.
+
 ## 3. Raw units
 
 A **raw unit** is the smallest native piece an adapter reads (for `rows-json`, the smallest set of
@@ -757,6 +803,8 @@ values is one of two kinds.
   Added since v1: `ts_source` `legacy` (v1.1, §2.1); `client` values, which are the `harness`
   registry's, and the `harness` `claude-ai` (v1.3, §1 rule 3).
 
+**Optional fields added since v1:** `native` and `units` (v1.4, §2.7).
+
 sessions has its own (sessions §5).
 
 **Decided for v1:**
@@ -889,6 +937,14 @@ harnesses (`packages/harness-session-adapters/docs/conformance-matrix.md`).
 - [ ] **Setup:** `setup` is null unless the harness store records it. Where it does
       (the planned `reference-harness`), it holds hashes and names only, and its `digest` is the sha256 of
       the canonical JSON of its other fields.
+- [ ] **Native is declared (v1.4):** where an adapter declares native paths, every key of every
+      `native` object is a path declared for that record's type, and its values pass the
+      redaction lint. A fixture whose native record holds an undeclared field shows that field
+      left out. Where it declares none, no record carries `native`.
+- [ ] **Units name the input (v1.4):** where an adapter emits `units`, every triple names a unit of
+      the `derive` input: its `source_key`, the generation the input gave that source, and a
+      `unit_key` that input held. The list is sorted with no triple twice, and a record's
+      `content_sha` is the same with and without `units`.
 
 ### Known-answer vectors
 

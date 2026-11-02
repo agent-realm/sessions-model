@@ -16,6 +16,8 @@ The items are checked on fixtures. Most items name the fixture that proves them.
 - **history**: explicit links, retraction against destruction, compaction that is not deletion;
 - **redaction**: sentinel secrets never appear, and their paths show the marker;
 - **usage**: the two flags per harness, no overlap, and `tool_prompt`.
+- **native and units** (v1.4): `native` holds only declared paths, and every `units` triple names
+  a unit of the `derive` input.
 
 Some harnesses certify the **sessions-only profile**: this model and the sessions seam, without the
 rest of a harness skeleton.

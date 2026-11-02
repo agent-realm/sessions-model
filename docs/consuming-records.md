@@ -34,6 +34,14 @@ A link's other side is a **reference** (`{harness, session_id}`, and the incarna
 which you resolve against the sessions you hold. A fork stated on the child and the same fork
 stated on the origin are one edge, which you merge.
 
+## Native fields and unit pointers (v1.4)
+
+`native` holds the native fields an adapter declares, keyed by their path. It means something only
+within one harness, so compare harnesses on the shared fields. `units` names the raw units a record
+came from. Join it to your archive with an outer join: a removed source leaves triples that name
+nothing, and after a reset a record may still name the older generation, whose units produced its
+content.
+
 ## Never
 
 - Never key anything on a hostname, a timestamp or the content.

@@ -1,6 +1,6 @@
 # Terminology
 
-The vocabulary of [sessions-model](contracts/sessions-model.md) and [sessions](contracts/sessions.md), sessions-model v1.3 and sessions v1.3. Every term the two contracts use is defined here; where a definition here and a contract differ, the contract wins.
+The vocabulary of [sessions-model](contracts/sessions-model.md) and [sessions](contracts/sessions.md), sessions-model v1.4 and sessions v1.4. Every term the two contracts use is defined here; where a definition here and a contract differ, the contract wins.
 
 ## Sessions: what a harness keeps
 
@@ -23,4 +23,6 @@ The vocabulary of [sessions-model](contracts/sessions-model.md) and [sessions](c
 | **raw unit** | the smallest native piece an adapter reads (a JSONL line, a SQLite row, a blob, or several rows that one transaction must read together, such as a Devin node tree), carried in one of five encodings (`utf8`, `b64`, `row-json`, `rows-json`, `pb-json`), with every declared secret field's value replaced by the redaction marker, and the `sha256` of the bytes as emitted. Every normalised record derives from raw units ([sessions-model](contracts/sessions-model.md) §3) |
 | **database profile** | one database's form of the harness-sessions-sql mapping: the ClickHouse database profile is normative, and a Postgres database profile covers the same logical tables. Always written in full, because a bare *profile* names other things too: the sessions-only conformance profile, user and environment profiles in tooling, and ClickHouse's settings profile. Not *dialect*, which already names ClickHouse's query-language setting |
 | **setup** | the harness setup a session was created under, on the session record: hashes and names only (the launch digest harness-skeleton's `hs` tool gave it, the digests of the harness's surface, the sha256 of the rendered system prompt, the tool names), and `null` unless the harness store records it, which in practice means a harness that is its own launcher (the planned `reference-harness`). Not a *profile*, and not a bare *config* |
+| **native** | on a session, message or part record (v1.4): the native fields its adapter declares for that record type in `describe`, keyed by their path; an allowlist, never every field that no other field maps (sessions-model §2.7) |
+| **units** | on any record (v1.4): the `[source_key, generation, unit_key]` triples of the raw units it was derived from; outside `content_sha` (sessions-model §2.7) |
 | **seam** | the boundary a contract fixes between a provider and its consumers: [sessions](contracts/sessions.md) is the seam between session adapters and whatever reads their records |
