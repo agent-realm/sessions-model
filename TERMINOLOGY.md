@@ -1,6 +1,6 @@
 # Terminology
 
-The vocabulary of [sessions-model](contracts/sessions-model.md) and [sessions](contracts/sessions.md), sessions-model v1.4.1 and sessions v1.4. Every term the two contracts use is defined here; where a definition here and a contract differ, the contract wins.
+The vocabulary of [sessions-model](contracts/sessions-model.md) and [sessions](contracts/sessions.md), sessions-model v1.4.2 and sessions v1.4. Every term the two contracts use is defined here; where a definition here and a contract differ, the contract wins.
 
 ## Sessions: what a harness keeps
 
@@ -24,5 +24,5 @@ The vocabulary of [sessions-model](contracts/sessions-model.md) and [sessions](c
 | **database profile** | one database's form of the harness-sessions-sql mapping: the ClickHouse database profile is normative, and a Postgres database profile covers the same logical tables. Always written in full, because a bare *profile* names other things too: the sessions-only conformance profile, user and environment profiles in tooling, and ClickHouse's settings profile. Not *dialect*, which already names ClickHouse's query-language setting |
 | **setup** | the harness setup a session was created under, on the session record: hashes and names only (the launch digest harness-skeleton's `hs` tool gave it, the digests of the harness's surface, the sha256 of the rendered system prompt, the tool names), and `null` unless the harness store records it, which in practice means a harness that is its own launcher (the planned `reference-harness`). Not a *profile*, and not a bare *config* |
 | **native** | on a session, message or part record (v1.4): the native fields its adapter declares for that record type in `describe`, keyed by their path, leaf values only (v1.4.1); an allowlist, never every field that no other field maps (sessions-model §2.7) |
-| **units** | on any record (v1.4): the `[source_key, generation, unit_key]` triples of the raw units its own fields were taken from (v1.4.1); outside `content_sha` (sessions-model §2.7) |
+| **units** | on any record (v1.4): the `[source_key, generation, unit_key]` triples of the raw units its own fields were taken from (v1.4.1), sorted with strings in code-point order (v1.4.2); outside `content_sha` (sessions-model §2.7) |
 | **seam** | the boundary a contract fixes between a provider and its consumers: [sessions](contracts/sessions.md) is the seam between session adapters and whatever reads their records |

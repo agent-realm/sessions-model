@@ -28,14 +28,14 @@ contracts use.
 
 ## Status
 
-**sessions-model v1.4.1, sessions v1.4 (consumer pending).** The shape and every closed list are
+**sessions-model v1.4.2, sessions v1.4 (consumer pending).** The shape and every closed list are
 frozen; additive optional fields, new registry values and opt-in features come in v1.x
 (sessions-model v1.1 added the `ts_source` value `legacy`; sessions v1.1 added the `forget-notice`
 feature; v1.3 settles `client`, `kind`, `is_error`, Zed's model and usage, a Devin sub-agent head,
 retries that never resolve, and service-held harness stores such as claude.ai; v1.4 adds two
 optional record fields, `native` (declared native fields) and `units` (pointers to raw units), and
-v1.4.1 clarifies both (leaf values only; a record's own fields); there is no v1.2 of
-the contracts, so that from v1.3 a contract version and its release tag agree, after the v1.2.0
+v1.4.1 and v1.4.2 clarify them (leaf values only; a record's own fields; the order of `units`);
+there is no v1.2 of the contracts, so that from v1.3 a contract version and its release tag agree, after the v1.2.0
 release that carried v1.1), and a breaking change needs v2. One provider passes the v1 conformance checklist; the
 first consumer, memhouse, is moving onto it. The `forget-notice` feature has no provider or consumer
 yet.
