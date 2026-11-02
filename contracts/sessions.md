@@ -1,6 +1,6 @@
-# Contract: sessions v1.4
+# Contract: sessions v1.4.4
 
-**version:** v1.4
+**version:** v1.4.4
 **between:** session adapters, one per harness, in the harness-session-adapters module of
 [harness-skeleton](https://github.com/agent-realm/harness-skeleton) (provider) ↔ memhouse's capture engine,
 the `sessions.*` shim in harness-skeleton's `hs` tool, and harness-sessions-sql loaders (consumers)
@@ -152,7 +152,7 @@ edits without a header bump). When `read` runs, rule 4 below holds unchanged.
 
 `read` is **stateless**. Precedence, in order:
 1. **Initialisation.** A read with no `from` and no `known` returns every current unit, as
-   `reset` with generation 1, whatever the mode.
+   `reset`, opening the source's first generation, whatever the mode.
 2. **Reset evidence.** If a stream's `from` no longer holds (an inode change, a shrink, a line-1
    change, a root that moved backwards), the adapter returns `reset` with every current unit.
 3. **`stream` sources** read from `from` alone, and return `appended` or `unchanged`. `known` is
@@ -317,7 +317,9 @@ not yet stored) is withheld by `derive` as `held` (§2), not by `read`.
 ## 4. The engine (consumer: memhouse's capture engine)
 
 The engine owns:
-- the cursor per (`store`, session, `source_key`), with its generation;
+- the cursor per (`store`, session, `source_key`), with its generation. The engine numbers a
+  source's generations, and only their order is significant (v1.4.4): each generation it opens is
+  higher than every one before it, and the first may be any number;
 - the archive of raw units;
 - `rev`, tombstones and totals;
 - inferred cross-session links, from session fingerprints (`evidence: inferred`);
