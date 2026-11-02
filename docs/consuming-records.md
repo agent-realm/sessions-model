@@ -6,7 +6,8 @@ owns the record shape; the consumer owns the cursors, the archive and the histor
 ## Keeping a session current
 
 1. Keep a cursor per (`store`, session, `source_key`), with its generation, and pass the last
-   position and the `known` unit hashes to `read`.
+   position and the `known` unit hashes to `read`. The generation numbers are yours: start where
+   you like, and make each one a source opens higher than the last.
 2. Archive the raw units. They are the truth: records can always be re-derived from them.
 3. Pass the units to `derive` with the last state, then upsert every record in `changed`.
 4. **Reconcile against `live`.** Any key you hold for the session that is absent from both `live`

@@ -1,6 +1,6 @@
-# Contract: sessions v1.4
+# Contract: sessions v1.4.4
 
-**version:** v1.4
+**version:** v1.4.4
 **between:** session adapters, one per harness, in the harness-session-adapters module of
 [harness-skeleton](https://github.com/agent-realm/harness-skeleton) (provider) ↔ memhouse's capture engine,
 the `sessions.*` shim in harness-skeleton's `hs` tool, and harness-sessions-sql loaders (consumers)
@@ -152,7 +152,7 @@ edits without a header bump). When `read` runs, rule 4 below holds unchanged.
 
 `read` is **stateless**. Precedence, in order:
 1. **Initialisation.** A read with no `from` and no `known` returns every current unit, as
-   `reset` with generation 1, whatever the mode.
+   `reset`, opening the source's first generation, whatever the mode.
 2. **Reset evidence.** If a stream's `from` no longer holds (an inode change, a shrink, a line-1
    change, a root that moved backwards), the adapter returns `reset` with every current unit.
 3. **`stream` sources** read from `from` alone, and return `appended` or `unchanged`. `known` is
@@ -317,7 +317,9 @@ not yet stored) is withheld by `derive` as `held` (§2), not by `read`.
 ## 4. The engine (consumer: memhouse's capture engine)
 
 The engine owns:
-- the cursor per (`store`, session, `source_key`), with its generation;
+- the cursor per (`store`, session, `source_key`), with its generation. The engine numbers a
+  source's generations, and only their order is significant (v1.4.4): each generation it opens is
+  higher than every one before it, and the first may be any number;
 - the archive of raw units;
 - `rev`, tombstones and totals;
 - inferred cross-session links, from session fingerprints (`evidence: inferred`);
@@ -540,7 +542,7 @@ never writing one for a source deletion) are the harness's to prove, by the fixt
 
 ## Verification status
 
-v1.4. The provider is the harness-session-adapters module in harness-skeleton
+v1.4.4. The provider is the harness-session-adapters module in harness-skeleton
 (`packages/harness-session-adapters`), with an adapter for twelve harnesses: Claude Code, Codex, Copilot
 CLI, Gemini CLI, VS Code, Goose, OpenCode, agy, Cursor IDE, cursor-agent, Zed and Devin Local.
 Every v1 adapter-side item above and every sessions-model item is proved for each of them, or
@@ -549,9 +551,9 @@ marked not applicable with its reason, in the module's conformance matrix
 `forget-notice` items are not proved yet: no harness writes forget notices today, so every adapter
 states `forget_notices: none`, and no consumer honours them yet. The v1.3 rules (sessions-model §8,
 the `is_error` item, and the Devin and retry rules in §2 here) are proved in the same matrix from
-the module's 1.0 release. The v1.4 fields, `native` and `units`, and their two sessions-model items
-(Native is declared, Units name the input) have no provider yet: no adapter emits them before
-its next `adapter_ver` bump.
+the module's 1.0 release. The v1.4 fields, `native` and `units`, are emitted by every adapter
+from the module's 1.1.0 release, and their two sessions-model items (Native is declared, Units
+name the input) are proved for each of them in the same matrix.
 
 The first consumer is memhouse's capture engine. The engine-side items are the consumer's to
 pass.

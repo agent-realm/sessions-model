@@ -1,6 +1,6 @@
 # Terminology
 
-The vocabulary of [sessions-model](contracts/sessions-model.md) and [sessions](contracts/sessions.md), sessions-model v1.4.3 and sessions v1.4. Every term the two contracts use is defined here; where a definition here and a contract differ, the contract wins.
+The vocabulary of [sessions-model](contracts/sessions-model.md) and [sessions](contracts/sessions.md), sessions-model v1.4.3 and sessions v1.4.4. Every term the two contracts use is defined here; where a definition here and a contract differ, the contract wins.
 
 ## Sessions: what a harness keeps
 
@@ -17,6 +17,7 @@ The vocabulary of [sessions-model](contracts/sessions-model.md) and [sessions](c
 | **session adapter** | the per-harness reader that emits sessions-model records; read-only toward the harness |
 | **source position** | an adapter's opaque, host-local marker of how far it has read: `{kind, value}` |
 | **continuity** | what a read of one source reports: `appended` (new units only), `delta` (new and changed units against the consumer's known hashes, plus gone keys), `reset` (rewritten; a new generation), `snapshot` (a whole-blob source changed) or `unchanged` |
+| **generation** | the engine's number for one epoch of a source in its archive: a source's first read opens one, and so does every `reset`; the engine numbers them, and only their order is significant: each is higher than every one before it, from any first number (sessions v1.4.4) |
 | **removed version** | how a consumer keeps a key that left a session's `live`: the key's last row, written again at a higher `rev` and marked removed. It is never counted as live (not in totals, current-state reads or billing), it stays searchable as history, and a key that comes back is written again as current. The consumer's alternative to a tombstone ([sessions](contracts/sessions.md) §4) |
 | **forget notice** | a content-free record that an admin deliberately deleted some of a session's records, or a whole session (a **forget**). The harness writes it into its harness store before it deletes anything, and keeps it for as long as the harness store exists. It carries a `forget_id`, the session's id and incarnation, the scope (the session, or every forgotten record key) and a time, and nothing else. A session adapter delivers it to a consumer that opts into the `forget-notice` feature ([sessions](contracts/sessions.md) §2, §4, §5), so the consumer can forget the same records instead of keeping removed versions. A source deletion never writes one. Always written in full: a bare *notice* is a part kind |
 | **feature** | a named, opt-in addition of a v1.x to the [sessions](contracts/sessions.md) operations: optional inputs, and outputs an adapter returns only to a consumer that names the feature in `features`. Without it, an adapter behaves exactly as v1 (sessions §5). v1.1 defines one, `forget-notice` |
