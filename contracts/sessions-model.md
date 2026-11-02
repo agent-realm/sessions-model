@@ -1,6 +1,6 @@
-# Contract: sessions-model v1.4
+# Contract: sessions-model v1.4.1
 
-**version:** v1.4
+**version:** v1.4.1
 **between:** session adapters (providers) ↔ any consumer of what a harness keeps: memhouse's
 capture engine, harness-skeleton's `sessions read`, a dashboard, an importer
 **status:** the harness-neutral shape of a harness store's conversation data: one model, one adapter
@@ -604,6 +604,10 @@ records): the native fields that the adapter declares for that record type, as a
   written as the redaction paths are written (§4): a dotted path into the native record.
   - `native` holds the value at each listed path that the native record has, keyed by the path,
     and nothing else. A field that no list names is dropped.
+  - **Values are leaf scalars** (v1.4.1): a string, a number, a boolean or null. An object or a list
+    at a listed path is dropped, never carried. Carried whole, it would bring its subtree, and any
+    field added to it later, past the review of the list: a declared object can hold absolute
+    paths (Codex `sandbox_policy.writable_roots`). An adapter declares each leaf it carries.
   - "Every field no other field maps" would carry exactly what hides there: environment variables,
     tool configurations, tokens and absolute paths.
 - **Redacted like every other field** (§4): a value on a redaction path is replaced in `native`
@@ -625,6 +629,12 @@ records): the native fields that the adapter declares for that record type, as a
   - the lines of a stream that fold into the record;
   - the rows of a delta source.
   `generation` is the source's generation as the input gives it.
+- **A record's own fields only** (v1.4.1). The units are those its own fields were taken from. A
+  field computed from other records contributes none, because those records' `units` already name
+  theirs.
+  - A session record names the units behind its title, `cwd`, `last_cwd`, `created_at`,
+    `updated_at` and `harness_version`, not every message behind its `fingerprint`.
+  - An aggregate usage record (a `per_session` total) names the entries it sums.
 - **Outside `content_sha`** (§2). A stream that is rewritten gets a new generation and new unit
   keys while its records stay the same, and inside the hash every such reset would revise every
   record.
@@ -831,6 +841,12 @@ re-derives (sessions §4):
 - a service-held harness store has an `s-` `host` derived from the service's domain, and the
   service's origin as `harness_path` (§1). A reader that checks `host`'s form (harness-sessions-sql's
   `CHECK`) accepts `s-` from v1.3.
+
+**Clarified in v1.4.1** (no shape change). Both rules are in §2.7. No adapter emitted either field
+before them:
+- `native` values are leaf scalars, and an object or a list at a declared path is dropped;
+- a record's `units` name the units of its own fields, and a field computed from other records
+  (the session `fingerprint`) contributes none.
 
 **Deferred out of v1:**
 - joining launch records from harness-skeleton's `hs` tool onto other harnesses' sessions, which is consumer-side work;
