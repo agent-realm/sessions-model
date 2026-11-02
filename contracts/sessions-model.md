@@ -1,6 +1,6 @@
-# Contract: sessions-model v1.4.1
+# Contract: sessions-model v1.4.2
 
-**version:** v1.4.1
+**version:** v1.4.2
 **between:** session adapters (providers) ↔ any consumer of what a harness keeps: memhouse's
 capture engine, harness-skeleton's `sessions read`, a dashboard, an importer
 **status:** the harness-neutral shape of a harness store's conversation data: one model, one adapter
@@ -624,6 +624,8 @@ records): the native fields that the adapter declares for that record type, as a
 **`units`**, on every record: the raw units the record was derived from, as a list of
 `[source_key, generation, unit_key]` triples. The list is sorted by `source_key`, then
 `generation`, then `unit_key`, with no triple twice.
+- **Order** (v1.4.2): strings compare in Unicode code-point order, which is the byte order of their
+  UTF-8, as SQL stores compare them; `generation` compares as a number.
 - **What it names.** The units of the `derive` input that the record's current state comes from:
   - a snapshot source's one unit;
   - the lines of a stream that fold into the record;
@@ -847,6 +849,10 @@ before them:
 - `native` values are leaf scalars, and an object or a list at a declared path is dropped;
 - a record's `units` name the units of its own fields, and a field computed from other records
   (the session `fingerprint`) contributes none.
+
+**Clarified in v1.4.2** (no shape change). The `units` strings sort in Unicode code-point order,
+UTF-8 byte order (§2.7). JCS's UTF-16 order still sorts the object keys inside `content_sha` and
+`cmp_sha` (§2). No adapter emitted `units` before it.
 
 **Deferred out of v1:**
 - joining launch records from harness-skeleton's `hs` tool onto other harnesses' sessions, which is consumer-side work;
