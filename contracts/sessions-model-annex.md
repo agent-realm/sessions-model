@@ -1,4 +1,4 @@
-# Annex to sessions-model v1.3: mapping per harness and conformance cases
+# Annex to sessions-model v1.4: mapping per harness and conformance cases
 
 **status:** informative, not normative. The normative text is [sessions-model](sessions-model.md).
 
